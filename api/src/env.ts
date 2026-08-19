@@ -11,8 +11,7 @@ export const ENV = {
   NODE_ENV: process.env.NODE_ENV || "development",
   COMMIT: process.env.RENDER_GIT_COMMIT?.slice(0, 7) || "local",
   DATABASE_URL: required("DATABASE_URL"),
+  SESSION_SECRET: required("SESSION_SECRET"),
 };
-
-
 
 export { required };

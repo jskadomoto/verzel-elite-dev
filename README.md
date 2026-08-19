@@ -2,7 +2,7 @@
 
 Desafio Elite Dev. Organizador publica eventos a partir de um catálogo externo, cliente reserva e paga de forma simulada, recebe um ingresso com código em QR e pode compartilhá-lo por link. A portaria valida o ingresso na entrada, distinguindo válido, inválido, já utilizado e evento errado.
 
-Repositório em construção ao longo de três dias. Este README descreve o que já funciona e o roadmap até a entrega. Nenhuma seção aqui promete comportamento que não exista no código.
+Este README descreve o que já funciona e o roadmap até a entrega. Nenhuma seção aqui promete comportamento que não exista no código.
 
 ---
 
@@ -115,7 +115,7 @@ Front em Next.js na Vercel, backend em Express com TypeScript no Render, Postgre
 
 O browser fala apenas com o Next. O route handler atua como BFF: lê o cookie de sessão e repassa a chamada à API com cabeçalho de autorização, servidor para servidor. Isso elimina cookie cross-site e CORS por construção, e é o motivo de não haver middleware de CORS no backend.
 
-Documento completo em [ARQUITETURA.md](./ARQUITETURA.md), com modelo de dados, máquinas de estado, contrato de API e riscos. Sequência de implementação e pontos de corte em [ROADMAP.md](./ROADMAP.md). Contexto de desenvolvimento do backend em [api/CLAUDE.md](./api/CLAUDE.md).
+Documento completo em [ARQUITETURA.md](./ARQUITETURA.md), com modelo de dados, máquinas de estado, contrato de API e riscos. Sequência de implementação e pontos de corte em [ROADMAP.md](./ROADMAP.md). Contexto de desenvolvimento do backend em [api/CLAUDE.md](./api/CLAUDE.md) e do frontend em [web/CLAUDE.md](./web/CLAUDE.md).
 
 ---
 

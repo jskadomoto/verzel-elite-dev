@@ -5,16 +5,18 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "dev": "tsx watch --env-file=.env src/server.ts",
+    "build": "tsc && cp -r src/db/migrations dist/db/migrations",
     "start": "node dist/server.js"
   },
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "pg": "^8.23.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/node": "^22.20.1",
+    "@types/pg": "^8.23.1",
     "tsx": "^4.23.12",
     "typescript": "^5.9.3"
   }

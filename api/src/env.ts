@@ -10,6 +10,9 @@ export const ENV = {
   PORT: Number(process.env.PORT) || 8080,
   NODE_ENV: process.env.NODE_ENV || "development",
   COMMIT: process.env.RENDER_GIT_COMMIT?.slice(0, 7) || "local",
+  DATABASE_URL: required("DATABASE_URL"),
 };
+
+
 
 export { required };

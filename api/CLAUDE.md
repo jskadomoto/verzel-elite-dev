@@ -6,9 +6,9 @@ Contexto do pacote `api/`. Leia antes de escrever qualquer código aqui.
 
 Backend da plataforma de eventos e ingressos do desafio Elite Dev. Três papéis: organizador publica eventos a partir de um catálogo externo, cliente reserva, paga de forma simulada e recebe um ingresso com QR, portaria valida o ingresso na entrada.
 
-**Isto é um case avaliado por uma pessoa em vinte minutos, não um produto.** O critério declarado no enunciado é a decisão tomada e o que foi descartado, não o volume entregue. Prazo real: quarta à noite, quinta à noite e sexta. Recomendação que não cabe até sexta não é recomendação.
+**Isto é um case, avaliado por leitura e por um percurso curto na aplicação.** O critério declarado no enunciado é a decisão tomada e o que foi descartado, não o volume entregue. Escopo é decisão, não sobra: proposta que amplia superfície sem cobrir requisito é recusada.
 
-O documento de arquitetura completo está em `../ARQUITETURA.md` e o roadmap em `../ROADMAP.md`. Este arquivo é o resumo operacional.
+O documento de arquitetura está em `../ARQUITETURA.md` e o registro das fases de implementação em `../ROADMAP.md`. Este arquivo é o resumo operacional.
 
 ## Stack
 
@@ -17,7 +17,7 @@ O documento de arquitetura completo está em `../ARQUITETURA.md` e o roadmap em 
 - Deploy no Render, plano gratuito.
 - `module: "node18"` no tsconfig, sem `moduleResolution` e sem `"type": "module"` no package.json. Imports relativos sem extensão.
 
-Não introduza ORM pesado, injeção de dependência, framework de aplicação nem broker de mensagem. Isso já foi decidido e está justificado no `DECISIONS.md`.
+Não introduza ORM pesado, injeção de dependência, framework de aplicação nem broker de mensagem. Isso já foi decidido e está justificado no capítulo de decisões de `../ARQUITETURA.md`.
 
 ## Organização
 
@@ -110,4 +110,4 @@ Quatro testes de integração contra Postgres real, não cobertura ampla:
 
 Mensageria, Redis, SSE, WebSocket, microsserviços, mapa de assentos, e-mail, nota fiscal, transferência de titularidade, recuperação de senha, refresh token rotativo, entidade de local separada, reemissão de QR, TMDb como segunda fonte.
 
-Cada um desses tem uma linha de justificativa no `DECISIONS.md`. Se algo aqui parecer errado, a discussão vai para o documento de decisão, não para o código.
+Cada um desses tem justificativa no capítulo de decisões de `../ARQUITETURA.md`. Se algo aqui parecer errado, a discussão vai para o documento de arquitetura, não para o código.

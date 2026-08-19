@@ -8,6 +8,7 @@ export function createApp() {
   app.use(express.json({ limit: "10kb" }));
 
   app.use("/", require("./routes").router);
+  app.use("/auth", authRouter);
 
   app.use((_req, res) => {
     res
@@ -16,6 +17,5 @@ export function createApp() {
   });
 
   app.use(errorHandler);
-  app.use("/auth", authRouter);
   return app;
 }

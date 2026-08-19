@@ -1,0 +1,21 @@
+{
+  "name": "verzel-elite-dev-api",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.20.1",
+    "tsx": "^4.23.12",
+    "typescript": "^5.9.3"
+  }
+}

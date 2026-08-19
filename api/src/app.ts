@@ -1,5 +1,6 @@
 import express from "express";
 import { errorHandler } from "./http/error-handler";
+import { authRouter } from "./auth/routes";
 
 export function createApp() {
   const app = express();
@@ -15,5 +16,6 @@ export function createApp() {
   });
 
   app.use(errorHandler);
+  app.use("/auth", authRouter);
   return app;
 }

@@ -1,6 +1,7 @@
 import express from "express";
 import { errorHandler } from "./http/error-handler";
 import { authRouter } from "./auth/routes";
+import { catalogRouter } from "./catalog/route";
 
 export function createApp() {
   const app = express();
@@ -9,6 +10,7 @@ export function createApp() {
 
   app.use("/", require("./routes").router);
   app.use("/auth", authRouter);
+  app.use("/catalog", catalogRouter);
 
   app.use((_req, res) => {
     res

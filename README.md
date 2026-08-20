@@ -6,59 +6,9 @@ Este README descreve o que já funciona e o roadmap até a entrega. Nenhuma seç
 
 ---
 
-## Progresso
+## Roadmap
 
-**Etapa atual: B0, esqueleto da API e tubo de deploy.**
-
-### Infraestrutura
-
-- [x] Repositório com `api/` e `web/` independentes, sem workspaces
-- [x] Express 5 com TypeScript compilando e `/health` respondendo
-- [x] Next.js criado com App Router e TypeScript
-- [x] Versões fixadas nos dois pacotes, com lockfile versionado
-- [ ] BFF no Next consumindo `/health` da API
-- [ ] Deploy da API no Render com health check
-- [ ] Deploy do front na Vercel apontando para a API
-- [ ] Ping externo contra a hibernação do plano gratuito
-- [ ] Postgres local via Docker Compose
-- [ ] Banco publicado no Neon
-
-### Backend
-
-- [ ] Schema completo e migração rodando no boot do processo
-- [ ] Autenticação com os três papéis e middlewares de autorização
-- [ ] Seed com organizador, dois clientes, portaria e evento publicado
-- [ ] Catálogo externo com cache, timeout e fixtures de contingência
-- [ ] Criação, edição e publicação de evento
-- [ ] Listagem pública com busca e página do evento
-- [ ] Reserva com alocação atômica de estoque e expiração da reserva
-- [ ] Pagamento simulado com aprovação e recusa, emitindo os ingressos
-- [ ] Ingressos do cliente e payload assinado do QR
-- [ ] Compartilhamento por link, com revogação
-- [ ] Validação na portaria com uso único
-- [ ] Cancelamento com devolução ao estoque
-- [ ] Testes de integração dos quatro comportamentos críticos
-
-### Frontend
-
-- [ ] Login e roteamento por papel
-- [ ] Catálogo público e página do evento
-- [ ] Painel do organizador: busca no catálogo, criação e publicação
-- [ ] Checkout com contador da reserva e pagamento
-- [ ] Meus ingressos e página do ingresso com QR
-- [ ] Página pública do link compartilhado
-- [ ] Portaria com leitura por câmera e digitação manual
-- [ ] Identidade visual
-
-### Documentação
-
-- [x] Documento de arquitetura
-- [x] Roadmap de implementação com pontos de corte
-- [x] Contexto de desenvolvimento do backend
-- [ ] Decisões e descartes
-- [ ] Prints das telas principais
-
----
+O Roadmap de implementação está detalhado no arquivo [ROADMAP.md](ROADMAP.md)
 
 ## Como rodar
 

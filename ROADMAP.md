@@ -4,13 +4,13 @@ Ordem em que vou construir o sistema e o critério que fecha cada fase. A arquit
 
 ## Situação
 
-**Fase atual: 2, schema e sessão.**
+**Fase atual: 3, catálogo e evento.**
 
 | Fase                                     | Estado       |
 | ---------------------------------------- | ------------ |
 | 1. Esqueleto publicado                   | concluída    |
-| 2. Schema e sessão                       | em andamento |
-| 3. Catálogo e evento                     | pendente     |
+| 2. Schema e sessão                       | concluída    |
+| 3. Catálogo e evento                     | em andamento |
 | 4. Compra                                | pendente     |
 | 5. Ingresso, compartilhamento e portaria | pendente     |
 | 6. Acabamento                            | pendente     |
@@ -47,11 +47,13 @@ A topologia também é escolhida aqui de forma a eliminar o problema mais chato 
 
 **Objetivo.** Estabelecer a fonte da verdade e o controle de acesso.
 
-**Escopo.** Schema completo em uma migração única, com todas as restrições. Migração executando no início do processo. Autenticação com os três papéis, middlewares de autorização, e seed mínimo com os quatro usuários.
+**Escopo.** Postgres local em contêiner. Schema completo em uma migração única, com todas as restrições. Executor de migração próprio, sem ferramenta externa, rodando no início do processo. Autenticação com os três papéis, middlewares de autorização, cookie de sessão escrito pelo BFF, e seed com os quatro usuários.
 
 **Critério de conclusão.** Login funciona nos três papéis, cada um alcançando uma área distinta, e a tentativa de acessar área alheia é recusada.
 
 **Por que o schema inteiro de uma vez.** Restrição adicionada depois é restrição que encontra dado inconsistente, e a saída fácil nesse momento é relaxar a restrição em vez de limpar os dados. Nascendo junto com a tabela, ela nunca permite o estado ruim existir. Como as garantias centrais do sistema vivem no banco, quero que existam antes do primeiro registro.
+
+**Por que migração escrita à mão.** As invariantes deste sistema são restrições de tabela e escritas condicionais, e são exatamente o que precisa estar legível para quem lê o código. Uma ferramenta que gera migração a partir de um modelo esconderia isso atrás de uma abstração. O executor lê arquivos SQL ordenados, registra o que já aplicou e roda cada um na própria transação, de modo que falha no meio não deixa schema pela metade.
 
 **Depende de.** Fase 1, porque a migração precisa rodar também no ambiente publicado.
 
@@ -66,6 +68,8 @@ A topologia também é escolhida aqui de forma a eliminar o problema mais chato 
 **Critério de conclusão.** Um evento importado do catálogo, ajustado e publicado pelo organizador, aparece na listagem pública com setores e disponibilidade.
 
 **Por que começar pelo conjunto local.** Construo o caminho degradado antes do caminho feliz. Assim a fase não fica dependendo de credencial nem de disponibilidade de API alheia, e o fallback nasce exercitado em vez de ser um tratamento de erro que nunca rodou.
+
+**Por que o catálogo vira snapshot.** O item externo é copiado para o banco no momento da importação, e a partir daí a exibição, a venda e a validação daquele evento não dependem mais da fonte. Os valores digitados pelo organizador prevalecem sobre o que veio importado, porque definir data, local, capacidade e preço é atribuição dele.
 
 **Depende de.** Fase 2, para papel de organizador e posse do evento.
 
@@ -108,6 +112,13 @@ A topologia também é escolhida aqui de forma a eliminar o problema mais chato 
 **Critério de conclusão.** O percurso inteiro é executável por alguém que nunca viu o sistema, partindo apenas do README e do banco semeado.
 
 **Por que a identidade visual fica para o fim.** Estilizar tela que ainda vai mudar é retrabalho, e decisões visuais tomadas aos poucos não produzem a coerência que um bloco único produz. Defino o conjunto de variáveis de uma vez, depois que as telas estabilizam.
+
+**Pendências acumuladas nas fases anteriores.** Registro o que foi adiado conscientemente, para que nada disso dependa de memória:
+
+- Serviços de api e web no compose, com o Dockerfile da api, hoje ausente porque o provedor constrói o backend nativamente.
+- Alinhar a versão dos tipos de Node entre os dois pacotes.
+- Registrar no README as decisões tomadas durante a implementação: bcrypt em vez de Argon2id, camadas sem inversão explícita de dependência, e gerenciador de pacotes único.
+- Links da aplicação publicada no topo do README, junto do aviso de hibernação.
 
 ---
 

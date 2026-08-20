@@ -283,34 +283,35 @@ Na criação do evento, o item completo é preservado em `external_snapshot`, os
 
 ## 10. Contrato de API
 
-| Método | Rota                     | Papel       | Função                                                      |
-| ------ | ------------------------ | ----------- | ----------------------------------------------------------- |
-| POST   | `/auth/register`         | público     | cria cliente                                                |
-| POST   | `/auth/login`            | público     | autentica e devolve token                                   |
-| POST   | `/auth/logout`           | autenticado | encerra sessão                                              |
-| GET    | `/auth/me`               | autenticado | usuário corrente                                            |
-| GET    | `/catalog/search`        | organizador | busca no catálogo externo                                   |
-| POST   | `/events`                | organizador | cria evento com snapshot e setores                          |
-| PATCH  | `/events/:id`            | dono        | edita rascunho                                              |
-| POST   | `/events/:id/publish`    | dono        | publica                                                     |
-| POST   | `/events/:id/cancel`     | dono        | cancela                                                     |
-| POST   | `/events/:id/gate-users` | dono        | cria ou atribui portaria                                    |
-| GET    | `/events`                | público     | lista publicados, com `q`, `category`, `city`, `from`, `to` |
-| GET    | `/events/:id`            | público     | detalhe com setores e disponibilidade                       |
-| GET    | `/organizer/events`      | organizador | painel com vendas por setor                                 |
-| POST   | `/orders`                | cliente     | reserva estoque                                             |
-| GET    | `/orders/:id`            | dono        | estado e itens                                              |
-| POST   | `/orders/:id/payment`    | dono        | autoriza e emite                                            |
-| POST   | `/orders/:id/cancel`     | dono        | cancela e devolve estoque                                   |
-| GET    | `/me/tickets`            | cliente     | ingressos do usuário                                        |
-| GET    | `/tickets/:id`           | dono        | ingresso com payload do código                              |
-| POST   | `/tickets/:id/share`     | dono        | gera link                                                   |
-| DELETE | `/tickets/:id/share`     | dono        | revoga link                                                 |
-| GET    | `/share/:token`          | público     | ingresso compartilhado                                      |
-| GET    | `/gate/events`           | portaria    | eventos atribuídos                                          |
-| POST   | `/gate/validate`         | portaria    | valida ingresso no evento informado                         |
-| GET    | `/gate/log`              | portaria    | tentativas recentes                                         |
-| GET    | `/health`                | público     | estado do serviço                                           |
+| Método | Rota                               | Papel       | Função                                                      |
+| ------ | ---------------------------------- | ----------- | ----------------------------------------------------------- |
+| POST   | `/auth/register`                   | público     | cria cliente                                                |
+| POST   | `/auth/login`                      | público     | autentica e devolve token                                   |
+| POST   | `/auth/logout`                     | autenticado | encerra sessão                                              |
+| GET    | `/auth/me`                         | autenticado | usuário corrente                                            |
+| GET    | `/catalog/search`                  | organizador | busca no catálogo externo                                   |
+| POST   | `/organizer/events`                | organizador | cria evento com snapshot e setores                          |
+| GET    | `/organizer/events`                | organizador | painel com vendas por setor                                 |
+| GET    | `/organizer/events/:id`            | dono        | detalhe do próprio evento, inclusive rascunho               |
+| PATCH  | `/organizer/events/:id`            | dono        | edita rascunho                                              |
+| POST   | `/organizer/events/:id/publish`    | dono        | publica                                                     |
+| POST   | `/organizer/events/:id/cancel`     | dono        | cancela                                                     |
+| POST   | `/organizer/events/:id/gate-users` | dono        | cria ou atribui portaria                                    |
+| GET    | `/events`                          | público     | lista publicados, com `q`, `category`, `city`, `from`, `to` |
+| GET    | `/events/:id`                      | público     | detalhe com setores e disponibilidade                       |
+| POST   | `/orders`                          | cliente     | reserva estoque                                             |
+| GET    | `/orders/:id`                      | dono        | estado e itens                                              |
+| POST   | `/orders/:id/payment`              | dono        | autoriza e emite                                            |
+| POST   | `/orders/:id/cancel`               | dono        | cancela e devolve estoque                                   |
+| GET    | `/me/tickets`                      | cliente     | ingressos do usuário                                        |
+| GET    | `/tickets/:id`                     | dono        | ingresso com payload do código                              |
+| POST   | `/tickets/:id/share`               | dono        | gera link                                                   |
+| DELETE | `/tickets/:id/share`               | dono        | revoga link                                                 |
+| GET    | `/share/:token`                    | público     | ingresso compartilhado                                      |
+| GET    | `/gate/events`                     | portaria    | eventos atribuídos                                          |
+| POST   | `/gate/validate`                   | portaria    | valida ingresso no evento informado                         |
+| GET    | `/gate/log`                        | portaria    | tentativas recentes                                         |
+| GET    | `/health`                          | público     | estado do serviço                                           |
 
 Erros seguem um envelope único, com código estável em maiúsculas que a interface usa para escolher a mensagem, mais uma descrição legível e um objeto de detalhes.
 

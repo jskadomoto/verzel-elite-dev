@@ -4,12 +4,16 @@ import type { CatalogItem } from "../catalog/types";
 import { pool } from "../db/pool";
 import { badRequest, conflict, notFound } from "../http/errors";
 import * as repository from "./repository";
-import type {
-  CreateEventInput,
-  EventWithTiers,
-  NewEvent,
-  TierInput,
-  UpdateEventInput,
+import {
+  toPublicEvent,
+  type CreateEventInput,
+  type EventWithTiers,
+  type NewEvent,
+  type PublicEventDetail,
+  type PublicSearchFilters,
+  type PublicSearchResult,
+  type TierInput,
+  type UpdateEventInput,
 } from "./types";
 
 // A linha do evento é o ponto de serialização das operações do organizador.
@@ -168,6 +172,35 @@ export async function getOwned(
     throw notFound("Evento não encontrado.");
   }
   return { ...event, tiers: await repository.findTiers(id) };
+}
+
+export async function searchPublished(
+  filters: PublicSearchFilters,
+): Promise<PublicSearchResult> {
+  const { items, total } = await repository.searchPublished(filters);
+
+  return {
+    items: items.map(({ priceFromCents, ...event }) => ({
+      ...toPublicEvent(event),
+      priceFromCents,
+    })),
+    page: filters.page,
+    pageSize: repository.PUBLIC_PAGE_SIZE,
+    total,
+  };
+}
+
+export async function getPublished(id: string): Promise<PublicEventDetail> {
+  const event = await repository.findPublished(id);
+  // Rascunho e cancelado respondem o mesmo que inexistente: para quem não é o
+  // dono, um evento que ainda não foi publicado não pode ser distinguível de um
+  // que nunca existiu.
+  if (!event) {
+    throw notFound("Evento não encontrado.");
+  }
+  // Setores vêm de findTiers, exatamente a mesma conversão que o caminho do
+  // organizador usa. É lá que `available` nasce e `allocated` fica.
+  return { ...toPublicEvent(event), tiers: await repository.findTiers(id) };
 }
 
 export async function update(

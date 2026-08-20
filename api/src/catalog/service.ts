@@ -33,7 +33,7 @@ export async function search(query: string, page = 0): Promise<SearchResult> {
     console.warn("Catálogo indisponível.", (err as Error).message);
     return {
       items: await fixturesProvider.search(query, page),
-      degraded: false,
+      degraded: true,
     };
   }
 }

@@ -27,3 +27,21 @@ export const validateBody =
     req.valid = result.data;
     next();
   };
+
+export const validateQuery =
+  (schema: ZodType): RequestHandler =>
+  (req, _res, next) => {
+    const result = schema.safeParse(req.query);
+    if (!result.success)
+      return next(
+        new AppError(
+          "VALIDATION_ERROR",
+          "Parâmetros inválidos",
+          422,
+          result.error.flatten(),
+        ),
+      );
+
+    req.valid = result.data;
+    next();
+  };

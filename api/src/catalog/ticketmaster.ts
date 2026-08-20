@@ -72,7 +72,7 @@ async function request(url: string): Promise<TmResponse> {
   try {
     const response = await fetch(url, { signal: controller.signal });
     if (!response.ok) {
-      const error = new Error(`Tickermaster respondeu ${response.status}`);
+      const error = new Error(`Ticketmaster respondeu ${response.status}`);
       (error as Error & { retryable?: boolean }).retryable =
         response.status >= 500;
       throw error;

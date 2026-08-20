@@ -1,11 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { readSession, type Role } from "./lib/session";
-
-const HOME: Record<Role, string> = {
-  ORGANIZER: "/organizador",
-  CUSTOMER: "/minha-conta",
-  GATE: "/portaria",
-};
+import { readSession } from "./lib/session";
+import { HOME } from "./lib/roles";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

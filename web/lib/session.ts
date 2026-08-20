@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
+import type { Role } from "./roles";
 
-export type Role = "ORGANIZER" | "CUSTOMER" | "GATE";
+export type { Role };
 export type Session = { sub: string; role: Role; name: string };
 
 // Decodifica sem verificar assinatura.

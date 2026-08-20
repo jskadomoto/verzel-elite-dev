@@ -41,6 +41,53 @@ export type EventRecord = {
 
 export type EventWithTiers = EventRecord & { tiers: Tier[] };
 
+// Projeção pública do evento, no mesmo idioma do `toPublic` de auth: o que não
+// interessa a quem só navega o catálogo sai aqui, e não numa segunda conversão
+// de linha. Procedência da importação e dono do evento são dados internos.
+export type PublicEvent = Omit<
+  EventRecord,
+  | "organizerId"
+  | "externalSource"
+  | "externalId"
+  | "snapshotAt"
+  | "createdAt"
+  | "updatedAt"
+>;
+
+export const toPublicEvent = ({
+  organizerId: _organizerId,
+  externalSource: _externalSource,
+  externalId: _externalId,
+  snapshotAt: _snapshotAt,
+  createdAt: _createdAt,
+  updatedAt: _updatedAt,
+  ...rest
+}: EventRecord): PublicEvent => rest;
+
+// O card do catálogo mostra preço, então a lista carrega o menor preço entre os
+// setores. Não carrega os setores inteiros: isso é o detalhe.
+export type PublicEventSummary = PublicEvent & {
+  priceFromCents: number | null;
+};
+
+export type PublicEventDetail = PublicEvent & { tiers: Tier[] };
+
+export type PublicSearchFilters = {
+  q?: string;
+  city?: string;
+  category?: string;
+  from?: string;
+  to?: string;
+  page: number;
+};
+
+export type PublicSearchResult = {
+  items: PublicEventSummary[];
+  page: number;
+  pageSize: number;
+  total: number;
+};
+
 // Campos que o organizador informa. Todos opcionais na criação, porque o que
 // faltar é preenchido pelo item importado do catálogo.
 export type EventFields = {

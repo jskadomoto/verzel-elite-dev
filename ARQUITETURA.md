@@ -95,7 +95,7 @@ Com contador, o número de linhas acompanha as vendas reais, o cancelamento é u
 
 Todas as tabelas usam identificador `uuid` gerado pelo banco e carregam `created_at` e `updated_at` em `timestamptz`. Valores monetários são inteiros de centavos.
 
-`gen_random_uuid()` é nativo desde o PostgreSQL 13. A única extensão exigida é `citext`, usada no e-mail para que a comparação ignore caixa sem espalhar `lower()` pelas consultas.
+`gen_random_uuid()` é nativo desde o PostgreSQL 13. Duas extensões são exigidas: `citext`, usada no e-mail para que a comparação ignore caixa sem espalhar `lower()` pelas consultas, e `unaccent`, usada na busca pública para que a comparação ignore acento. Sem ela, quem digita "metropole" não encontra "Metrópole", o que num acervo em português é a consulta comum e não a exceção. A extensão normaliza os dois lados da comparação, junto com `lower()` para a caixa, e não altera a decisão de manter correspondência simples, sem índice invertido e sem busca textual.
 
 ### Enumerações
 
@@ -319,6 +319,10 @@ Os vereditos de portaria não trafegam como erro. Já utilizado, evento errado e
 
 A busca de eventos usa correspondência simples sobre título e nome do local, restrita aos publicados, combinada com filtros de cidade e período. O volume envolvido não justifica índice invertido, e o padrão de consulta predominante é nome próprio digitado parcialmente, que busca textual com radicalização atende pior que correspondência direta.
 
+A correspondência é feita com `strpos` sobre os dois textos normalizados por `unaccent` e `lower`, e não com `LIKE`. A diferença não é de desempenho: `LIKE` dá significado a `%` e `_` digitados pelo usuário, e escapá-los não basta, porque `unaccent` roda depois do escape e recria metacaractere a partir de caractere comum, como o `％` de largura inteira, que ela converte em `%`. Sem padrão não existe curinga para escapar nem escape para desfazer, e "contém esta substring" já é a semântica pretendida.
+
+O filtro de cidade é igualdade, não trecho: ele escolhe entre valores que existem no acervo, enquanto a busca por trecho é atribuição do termo livre. A consequência para a interface é que cidade se oferece como seleção, e não como campo de digitação.
+
 ## 11. Operação
 
 **Hibernação.** A aplicação é suspensa após quinze minutos sem tráfego e leva até um minuto para responder novamente. Isso é mitigado por um acionamento externo periódico do endpoint de saúde, e comunicado na documentação, já que a alternativa é o comportamento ser interpretado como falha.
@@ -328,6 +332,10 @@ O endpoint de saúde expõe o instante de início do processo, o que permite dis
 **Rotina de migração.** Executa no início do processo, antes da abertura da porta, porque o plano de hospedagem não oferece fase de release separada.
 
 **Fuso horário.** Instantes são armazenados com fuso, e o evento carrega o fuso do local. A conversão entre horário de parede informado pelo organizador e instante armazenado acontece em um único ponto do servidor, porque é a fonte mais comum de erro silencioso neste domínio.
+
+O filtro de período da busca pública segue a mesma regra. Ele recebe data simples, sem hora, e o servidor resolve o começo e o fim do dia, com o fim inclusivo. Exigir instante completo do cliente empurraria a conversão para cada um deles e, junto com ela, o erro clássico de um fim de período à meia-noite excluir o último dia inteiro do intervalo.
+
+O fuso de referência dessa resolução é único e fixo, e não o fuso de cada evento. Resolver no fuso do evento significaria comparar `starts_at at time zone timezone`, o que aplica função sobre a coluna, descarta o índice de `starts_at` e faz o mesmo intervalo ter limites diferentes por linha. A correção que isso compraria só apareceria em acervo espalhado por vários fusos, e aqui o padrão do evento é o mesmo fuso de referência. Se o acervo passar a cruzar fusos, a resolução por evento é o caminho de evolução.
 
 ### Modos de falha e resposta
 

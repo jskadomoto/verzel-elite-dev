@@ -12,6 +12,7 @@ export const ENV = {
   COMMIT: process.env.RENDER_GIT_COMMIT?.slice(0, 7) || "local",
   DATABASE_URL: required("DATABASE_URL"),
   SESSION_SECRET: required("SESSION_SECRET"),
+  TICKETMASTER_API_KEY: process.env.TICKETMASTER_API_KEY || "",
 };
 
 export { required };

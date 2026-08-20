@@ -35,6 +35,25 @@ Consequências práticas:
 
 Tailwind 4 configura por CSS, não por arquivo de config. As variáveis vivem no bloco `@theme` do `globals.css`. Não crie `tailwind.config.ts`.
 
+**Mobile first, sem exceção.** Todo layout é escrito primeiro para a menor
+largura e só depois recebe os ajustes de tela maior. Na prática: as classes sem
+prefixo descrevem o celular, e `sm:`, `md:` e `lg:` adicionam, nunca corrigem.
+Nada de largura fixa, nada de `min-width` em pixel, nada de layout que só faz
+sentido acima de determinada largura.
+
+Três razões específicas deste projeto, e a terceira é a que não se contorna:
+
+- A portaria opera em celular, na entrada do evento, com uma mão segurando o
+  aparelho. Não existe versão de mesa dessa tela em uso real.
+- O ingresso é apresentado no celular, e é onde o código é lido.
+- A câmera exige contexto seguro e é testada em dispositivo real. Uma tela que
+  só funciona em janela larga não é testável no único ambiente que importa.
+
+Alvos: a menor largura suportada é 320 pixels, e nenhuma tela pode ter rolagem
+horizontal em nenhuma largura. Área tocável mínima de 44 pixels em qualquer
+elemento interativo. Texto nunca abaixo de 16 pixels em campo de formulário,
+porque abaixo disso o navegador do celular aplica zoom ao focar.
+
 A identidade visual é decisão do autor do projeto e acontece na sexta, em bloco, definindo o conjunto de variáveis de uma vez antes de estilizar qualquer tela de verdade. Até lá, use utilitários direto e não invente token nem paleta.
 
 Dois pontos já mapeados no `globals.css` do scaffold, para resolver quando chegar a hora: o `body` fixa `font-family` e anula as variáveis de fonte declaradas logo acima, e o esquema de cores segue a preferência do sistema operacional de quem abre.

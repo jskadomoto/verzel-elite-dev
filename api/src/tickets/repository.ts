@@ -4,7 +4,8 @@ import type { NewTicket, TicketRecord, TicketStatus } from "./types";
 
 type Executor = Pool | PoolClient;
 
-const TICKET_COLUMNS = `id, order_id, event_id, tier_id, seat_label, status, created_at`;
+const TICKET_COLUMNS = `id, order_id, event_id, tier_id, seat_label, status,
+  used_at, created_at`;
 
 type TicketRow = {
   id: string;
@@ -13,6 +14,7 @@ type TicketRow = {
   tier_id: string;
   seat_label: string;
   status: TicketStatus;
+  used_at: Date | null;
   created_at: Date;
 };
 
@@ -23,6 +25,7 @@ const toTicket = (row: TicketRow): TicketRecord => ({
   tierId: row.tier_id,
   seatLabel: row.seat_label,
   status: row.status,
+  usedAt: row.used_at?.toISOString() ?? null,
   createdAt: row.created_at.toISOString(),
 });
 
@@ -65,4 +68,30 @@ export async function findByOrder(
     [orderId],
   );
   return rows.map(toTicket);
+}
+
+export async function findByHolder(
+  holderUserId: string,
+  db: Executor = pool,
+): Promise<TicketRecord[]> {
+  const { rows } = await db.query<TicketRow>(
+    `select ${TICKET_COLUMNS} from tickets
+     where holder_user_id = $1
+     order by created_at desc, seat_label`,
+    [holderUserId],
+  );
+  return rows.map(toTicket);
+}
+
+export async function findOwned(
+  id: string,
+  holderUserId: string,
+  db: Executor = pool,
+): Promise<TicketRecord | null> {
+  const { rows } = await db.query<TicketRow>(
+    `select ${TICKET_COLUMNS} from tickets
+     where id = $1 and holder_user_id = $2`,
+    [id, holderUserId],
+  );
+  return rows[0] ? toTicket(rows[0]) : null;
 }

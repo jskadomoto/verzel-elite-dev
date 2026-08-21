@@ -159,6 +159,17 @@ export async function findTiers(
   return rows.map(toTier);
 }
 
+export async function findTierById(
+  tierId: string,
+  db: Executor = pool,
+): Promise<Tier | null> {
+  const { rows } = await db.query<TierRow>(
+    `select ${TIER_COLUMNS} from ticket_tiers where id = $1`,
+    [tierId],
+  );
+  return rows[0] ? toTier(rows[0]) : null;
+}
+
 export const ORGANIZER_PAGE_SIZE = 20;
 
 export async function findByOrganizer(
@@ -408,6 +419,32 @@ async function countPublished(
     values,
   );
   return Number(rows[0].total);
+}
+
+export async function findById(
+  id: string,
+  db: Executor = pool,
+): Promise<EventRecord | null> {
+  const { rows } = await db.query<EventRow>(
+    `select ${EVENT_COLUMNS} from events where id = $1`,
+    [id],
+  );
+  return rows[0] ? toEvent(rows[0]) : null;
+}
+
+export async function findByIds(
+  ids: string[],
+  db: Executor = pool,
+): Promise<Map<string, EventRecord>> {
+  const byId = new Map<string, EventRecord>();
+  if (!ids.length) return byId;
+
+  const { rows } = await db.query<EventRow>(
+    `select ${EVENT_COLUMNS} from events where id = any($1::uuid[])`,
+    [ids],
+  );
+  for (const row of rows) byId.set(row.id, toEvent(row));
+  return byId;
 }
 
 export async function findPublished(

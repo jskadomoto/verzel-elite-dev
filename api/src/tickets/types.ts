@@ -1,3 +1,5 @@
+import type { EventStatus } from "../events/types";
+
 export type TicketStatus = "VALID" | "USED" | "CANCELLED";
 
 export type NewTicket = {
@@ -15,5 +17,37 @@ export type TicketRecord = {
   tierId: string;
   seatLabel: string;
   status: TicketStatus;
+  usedAt: string | null;
   createdAt: string;
 };
+
+export type TicketEvent = {
+  id: string;
+  status: EventStatus;
+  title: string;
+  startsAt: string;
+  timezone: string;
+  venueName: string;
+  address: string | null;
+  city: string;
+  state: string | null;
+  country: string;
+};
+
+export type TicketTier = {
+  id: string;
+  name: string;
+};
+
+export type TicketSummary = {
+  id: string;
+  orderId: string;
+  seatLabel: string;
+  status: TicketStatus;
+  usedAt: string | null;
+  createdAt: string;
+  event: TicketEvent;
+  tier: TicketTier;
+};
+
+export type TicketDetail = TicketSummary & { code: string };

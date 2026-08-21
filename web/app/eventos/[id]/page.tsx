@@ -1,5 +1,7 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { AvailabilityBar } from "@/components/availability-bar";
 import { ReserveForm } from "@/components/reserve-form";
 import { RetryButton } from "@/components/retry-button";
@@ -18,14 +20,55 @@ import { getSession } from "@/lib/session";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+const loadEvent = cache((id: string) =>
+  read<PublicEventDetail>(`/events/${encodeURIComponent(id)}`),
+);
+
+const placeOf = (event: PublicEventDetail) =>
+  event.state ? `${event.city}, ${event.state}` : event.city;
+
+const DESCRIPTION_LIMIT = 200;
+
+function summaryOf(event: PublicEventDetail): string {
+  const written = event.description?.trim();
+  if (written) {
+    return written.length > DESCRIPTION_LIMIT
+      ? `${written.slice(0, DESCRIPTION_LIMIT - 1).trimEnd()}…`
+      : written;
+  }
+
+  const when = formatEventDateTimeLong(event.startsAt, event.timezone);
+  return `${when} · ${event.venueName}, ${placeOf(event)}`;
+}
+
+export async function generateMetadata({
+  params,
+}: Readonly<{ params: Promise<{ id: string }> }>): Promise<Metadata> {
+  const { id } = await params;
+  const result = await loadEvent(id);
+
+  if (!result.ok) return { title: "Evento" };
+
+  const event = result.data;
+  const description = summaryOf(event);
+
+  return {
+    title: event.title,
+    description,
+    openGraph: {
+      type: "website",
+      title: event.title,
+      description,
+      images: event.imageUrl ? [event.imageUrl] : undefined,
+    },
+  };
+}
+
 export default async function EventPage({
   params,
 }: Readonly<{ params: Promise<{ id: string }> }>) {
   const { id } = await params;
-  const [result, session] = await Promise.all([
-    read<PublicEventDetail>(`/events/${encodeURIComponent(id)}`),
-    getSession(),
-  ]);
+  const [result, session] = await Promise.all([loadEvent(id), getSession()]);
 
   if (!result.ok) {
     if (result.status === 404) notFound();
@@ -40,7 +83,7 @@ export default async function EventPage({
   }
 
   const event = result.data;
-  const place = event.state ? `${event.city}, ${event.state}` : event.city;
+  const place = placeOf(event);
 
   return (
     <div className="flex min-h-full flex-col">

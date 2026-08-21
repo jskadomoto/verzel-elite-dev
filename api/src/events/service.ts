@@ -9,6 +9,7 @@ import {
   type CreateEventInput,
   type EventWithTiers,
   type NewEvent,
+  type OrganizerListResult,
   type PublicEventDetail,
   type PublicSearchFilters,
   type PublicSearchResult,
@@ -144,6 +145,25 @@ export async function getOwned(
     throw notFound("Evento não encontrado.");
   }
   return { ...event, tiers: await repository.findTiers(id) };
+}
+
+export async function listOwned(
+  organizerId: string,
+  page: number,
+): Promise<OrganizerListResult> {
+  const { items, total } = await repository.findByOrganizer(organizerId, page);
+
+  const tiersByEvent = await repository.findTiersOf(items.map(({ id }) => id));
+
+  return {
+    items: items.map((event) => ({
+      ...event,
+      tiers: tiersByEvent.get(event.id) ?? [],
+    })),
+    page,
+    pageSize: repository.ORGANIZER_PAGE_SIZE,
+    total,
+  };
 }
 
 export async function searchPublished(

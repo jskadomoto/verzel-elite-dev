@@ -1,7 +1,12 @@
 import { Router } from "express";
 import z from "zod";
 import { requireAuth, requireRole } from "../auth/middleware";
-import { param, validateBody, validateParam } from "../http/validate";
+import {
+  param,
+  validateBody,
+  validateParam,
+  validateQuery,
+} from "../http/validate";
 import * as service from "./service";
 import type { CreateEventInput, UpdateEventInput } from "./types";
 
@@ -46,6 +51,14 @@ const updateSchema = eventFieldsSchema.extend({
 });
 
 const validateId = validateParam("id", z.uuid(), "Evento não encontrado.");
+const listSchema = z.object({
+  page: z.coerce.number().int().min(0).max(500).default(0),
+});
+
+eventsRouter.get("/", validateQuery(listSchema), async (req, res) => {
+  const { page } = req.valid as z.infer<typeof listSchema>;
+  res.json(await service.listOwned(req.session!.sub, page));
+});
 
 eventsRouter.post("/", validateBody(createSchema), async (req, res) => {
   const input = req.valid as CreateEventInput;

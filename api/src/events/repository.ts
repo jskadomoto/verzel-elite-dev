@@ -159,6 +159,62 @@ export async function findTiers(
   return rows.map(toTier);
 }
 
+export const ORGANIZER_PAGE_SIZE = 20;
+
+export async function findByOrganizer(
+  organizerId: string,
+  page: number,
+  db: Executor = pool,
+): Promise<{ items: EventRecord[]; total: number }> {
+  const { rows } = await db.query<EventRow & { total: string }>(
+    `select ${EVENT_COLUMNS}, count(*) over() as total
+     from events
+     where organizer_id = $1
+     order by created_at desc, id
+     limit $2 offset $3`,
+    [organizerId, ORGANIZER_PAGE_SIZE, page * ORGANIZER_PAGE_SIZE],
+  );
+
+  return {
+    items: rows.map(toEvent),
+    total: await totalOf(rows, page, () => countByOrganizer(organizerId, db)),
+  };
+}
+
+async function countByOrganizer(
+  organizerId: string,
+  db: Executor,
+): Promise<number> {
+  const { rows } = await db.query<{ total: string }>(
+    "select count(*)::text as total from events where organizer_id = $1",
+    [organizerId],
+  );
+  return Number(rows[0].total);
+}
+
+export async function findTiersOf(
+  eventIds: string[],
+  db: Executor = pool,
+): Promise<Map<string, Tier[]>> {
+  const byEvent = new Map<string, Tier[]>();
+  if (!eventIds.length) return byEvent;
+
+  const { rows } = await db.query<TierRow>(
+    `select ${TIER_COLUMNS} from ticket_tiers
+     where event_id = any($1::uuid[])
+     order by event_id, price_cents, name`,
+    [eventIds],
+  );
+
+  for (const row of rows) {
+    const tier = toTier(row);
+    const existing = byEvent.get(tier.eventId);
+    if (existing) existing.push(tier);
+    else byEvent.set(tier.eventId, [tier]);
+  }
+  return byEvent;
+}
+
 export async function findOwned(
   id: string,
   organizerId: string,
@@ -281,20 +337,22 @@ export async function searchPublished(
     [...values, PUBLIC_PAGE_SIZE, filters.page * PUBLIC_PAGE_SIZE],
   );
 
-  if (rows[0]) {
-    return {
-      items: rows.map((row) => ({
-        ...toEvent(row),
-        priceFromCents: row.price_from_cents,
-      })),
-      total: Number(rows[0].total),
-    };
-  }
+  return {
+    items: rows.map((row) => ({
+      ...toEvent(row),
+      priceFromCents: row.price_from_cents,
+    })),
+    total: await totalOf(rows, filters.page, () => countPublished(values, db)),
+  };
+}
 
-  const total =
-    filters.page > 0 ? await countPublished(values, db) : 0;
-
-  return { items: [], total };
+async function totalOf(
+  rows: Array<{ total: string }>,
+  page: number,
+  count: () => Promise<number>,
+): Promise<number> {
+  if (rows[0]) return Number(rows[0].total);
+  return page > 0 ? count() : 0;
 }
 
 async function countPublished(

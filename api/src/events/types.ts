@@ -39,6 +39,13 @@ export type EventRecord = {
 
 export type EventWithTiers = EventRecord & { tiers: Tier[] };
 
+export type OrganizerListResult = {
+  items: EventWithTiers[];
+  page: number;
+  pageSize: number;
+  total: number;
+};
+
 export type PublicEvent = Omit<
   EventRecord,
   | "organizerId"

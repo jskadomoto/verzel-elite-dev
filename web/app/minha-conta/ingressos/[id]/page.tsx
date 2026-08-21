@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { RetryButton } from "@/components/retry-button";
+import { ShareControls } from "@/components/share-controls";
 import { TicketEventHeading, TicketFace } from "@/components/ticket-face";
 import { messageFor } from "@/lib/errors";
+import { formatEventDateTime } from "@/lib/format";
 import { loadTicket } from "@/lib/ticket-reads";
 
 export const dynamic = "force-dynamic";
@@ -39,6 +41,24 @@ export default async function TicketPage({
           ser digitado na portaria.
         </p>
       </TicketFace>
+
+      <ShareControls
+        ticketId={ticket.id}
+        share={ticket.share}
+        expiresLabel={
+          ticket.share
+            ? formatEventDateTime(ticket.share.expiresAt, ticket.event.timezone)
+            : ""
+        }
+        lastOpenedLabel={
+          ticket.share?.lastOpenedAt
+            ? formatEventDateTime(
+                ticket.share.lastOpenedAt,
+                ticket.event.timezone,
+              )
+            : null
+        }
+      />
 
       <Link
         href="/minha-conta"

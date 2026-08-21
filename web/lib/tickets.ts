@@ -29,8 +29,18 @@ export type TicketSummary = {
   tier: TicketTier;
 };
 
+export type ShareLink = {
+  expiresAt: string;
+  openedCount: number;
+  lastOpenedAt: string | null;
+  createdAt: string;
+};
+
+export type IssuedShareLink = ShareLink & { token: string };
+
 export type TicketDetail = TicketSummary & {
   code: string;
+  share: ShareLink | null;
 };
 
 export type SharedTicket = {
@@ -50,6 +60,9 @@ export const STATUS_LABEL: Record<TicketStatus, string> = {
 
 export const ticketHref = (ticketId: string) =>
   `/minha-conta/ingressos/${encodeURIComponent(ticketId)}`;
+
+export const sharePath = (token: string) =>
+  `/ingresso/${encodeURIComponent(token)}`;
 
 export type TicketGroup = {
   event: TicketEvent;

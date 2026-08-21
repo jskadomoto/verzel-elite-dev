@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AvailabilityBar } from "@/components/availability-bar";
 import { ReserveForm } from "@/components/reserve-form";
 import { RetryButton } from "@/components/retry-button";
+import { SiteHeader } from "@/components/site-header";
 import { read } from "@/lib/api";
 import { messageFor } from "@/lib/errors";
 import type { PublicEventDetail, Tier } from "@/lib/events";
@@ -42,52 +43,54 @@ export default async function EventPage({
   const place = event.state ? `${event.city}, ${event.state}` : event.city;
 
   return (
-    <main className="mx-auto flex min-h-full w-full max-w-2xl flex-col gap-8 px-4 py-6">
-      <Link href="/" className="back-link">
-        ← Catálogo
-      </Link>
+    <div className="flex min-h-full flex-col">
+      <SiteHeader identity={session} surface="public" width="max-w-2xl" />
 
-      <header className="flex flex-col gap-3">
-        <span className="chip self-start">{event.category}</span>
-        <h1 className="text-2xl font-extrabold break-words">
-          {event.title}
-        </h1>
-        <p className="font-medium text-gold">
-          {formatEventDateTimeLong(event.startsAt, event.timezone)}
-        </p>
-        <p className="break-words">{`${event.venueName} · ${place}`}</p>
-        {event.address ? (
-          <p className="text-sm break-words text-muted">{event.address}</p>
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-4 py-6">
+        <Link href="/" className="back-link">
+          ← Catálogo
+        </Link>
+
+        <header className="flex flex-col gap-3">
+          <span className="chip self-start">{event.category}</span>
+          <h1 className="text-2xl font-extrabold break-words">{event.title}</h1>
+          <p className="font-medium text-gold">
+            {formatEventDateTimeLong(event.startsAt, event.timezone)}
+          </p>
+          <p className="break-words">{`${event.venueName} · ${place}`}</p>
+          {event.address ? (
+            <p className="text-sm break-words text-muted">{event.address}</p>
+          ) : null}
+        </header>
+
+        {event.description ? (
+          <p className="break-words whitespace-pre-line text-muted">
+            {event.description}
+          </p>
         ) : null}
-      </header>
 
-      {event.description ? (
-        <p className="break-words whitespace-pre-line text-muted">
-          {event.description}
-        </p>
-      ) : null}
+        <section className="flex flex-col gap-3">
+          <h2 className="text-lg font-semibold">Setores</h2>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Setores</h2>
-
-        {event.tiers.length === 0 ? (
-          <p className="notice">Este evento ainda não tem setores à venda.</p>
-        ) : session?.role === "CUSTOMER" ? (
-          <ReserveForm eventId={event.id} tiers={event.tiers} />
-        ) : (
-          <>
-            <ul className="flex flex-col gap-3">
-              {event.tiers.map((tier) => (
-                <li key={tier.id}>
-                  <TierRow tier={tier} />
-                </li>
-              ))}
-            </ul>
-            <WhoCanBuy role={session?.role ?? null} />
-          </>
-        )}
-      </section>
-    </main>
+          {event.tiers.length === 0 ? (
+            <p className="notice">Este evento ainda não tem setores à venda.</p>
+          ) : session?.role === "CUSTOMER" ? (
+            <ReserveForm eventId={event.id} tiers={event.tiers} />
+          ) : (
+            <>
+              <ul className="flex flex-col gap-3">
+                {event.tiers.map((tier) => (
+                  <li key={tier.id}>
+                    <TierRow tier={tier} />
+                  </li>
+                ))}
+              </ul>
+              <WhoCanBuy role={session?.role ?? null} />
+            </>
+          )}
+        </section>
+      </main>
+    </div>
   );
 }
 

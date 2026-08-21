@@ -1,8 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { BrandMark } from "@/components/brand-mark";
 import { CatalogFilterForm } from "@/components/catalog-filter-form";
 import { CatalogResults } from "@/components/catalog-results";
+import { SiteHeader } from "@/components/site-header";
 import { read } from "@/lib/api";
 import {
   apiSearchParams,
@@ -13,6 +12,7 @@ import {
   type CitiesResult,
   type EventListResult,
 } from "@/lib/events";
+import { getSession } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -25,11 +25,12 @@ export default async function CatalogPage({
   const filters = filtersFrom(await searchParams);
   const invertedPeriod = isInvertedPeriod(filters);
 
-  const [cities, listing] = await Promise.all([
+  const [cities, listing, session] = await Promise.all([
     read<CitiesResult>("/events/cities"),
     invertedPeriod
       ? null
       : read<EventListResult>("/events", apiSearchParams(filters)),
+    getSession(),
   ]);
 
   if (listing?.ok && listing.data.items.length === 0 && listing.data.total > 0) {
@@ -43,14 +44,11 @@ export default async function CatalogPage({
 
   return (
     <div className="flex min-h-full flex-col">
-      <header className="border-b border-line">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-3">
-          <BrandMark />
-          <Link href="/login" className="btn-quiet">
-            Entrar
-          </Link>
-        </div>
-      </header>
+      <SiteHeader
+        identity={session}
+        surface="public"
+        width="max-w-5xl"
+      />
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-4 py-6">
         <div className="flex flex-col gap-2">

@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { RetryButton } from "@/components/retry-button";
 import { ShareControls } from "@/components/share-controls";
 import { TicketEventHeading, TicketFace } from "@/components/ticket-face";
+import { confirmationHref } from "@/lib/checkout";
 import { messageFor } from "@/lib/errors";
 import { formatEventDateTime } from "@/lib/format";
 import { loadTicket } from "@/lib/ticket-reads";
@@ -63,6 +64,10 @@ export default async function TicketPage({
             : null
         }
       />
+
+      <Link href={confirmationHref(ticket.orderId)} className="back-link">
+        Ver o pedido deste ingresso →
+      </Link>
     </main>
   );
 }

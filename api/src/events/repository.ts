@@ -215,6 +215,35 @@ export async function findTiersOf(
   return byEvent;
 }
 
+export async function findPublishedForShare(
+  id: string,
+  db: PoolClient,
+): Promise<EventRecord | null> {
+  const { rows } = await db.query<EventRow>(
+    `select ${EVENT_COLUMNS} from events
+     where id = $1 and status = 'PUBLISHED'
+     for share`,
+    [id],
+  );
+  return rows[0] ? toEvent(rows[0]) : null;
+}
+
+export async function allocate(
+  tierId: string,
+  eventId: string,
+  quantity: number,
+  db: PoolClient,
+): Promise<number | null> {
+  const { rows } = await db.query<{ price_cents: number }>(
+    `update ticket_tiers
+     set allocated = allocated + $3, updated_at = now()
+     where id = $1 and event_id = $2 and allocated + $3 <= capacity
+     returning price_cents`,
+    [tierId, eventId, quantity],
+  );
+  return rows[0]?.price_cents ?? null;
+}
+
 export async function findOwned(
   id: string,
   organizerId: string,

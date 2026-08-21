@@ -4,6 +4,7 @@ import { authRouter } from "./auth/routes";
 import { catalogRouter } from "./catalog/route";
 import { eventsRouter } from "./events/routes";
 import { publicEventsRouter } from "./events/public-routes";
+import { ordersRouter } from "./orders/routes";
 
 export function createApp() {
   const app = express();
@@ -15,6 +16,7 @@ export function createApp() {
   app.use("/catalog", catalogRouter);
   app.use("/events", publicEventsRouter);
   app.use("/organizer/events", eventsRouter);
+  app.use("/orders", ordersRouter);
 
   app.use((_req, res) => {
     res

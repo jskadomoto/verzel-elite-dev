@@ -1,26 +1,71 @@
-'use client'
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { CatalogFilterForm } from "@/components/catalog-filter-form";
+import { CatalogResults } from "@/components/catalog-results";
+import { read } from "@/lib/api";
+import {
+  apiSearchParams,
+  catalogHref,
+  filtersFrom,
+  isInvertedPeriod,
+  lastPageOf,
+  type CitiesResult,
+  type EventListResult,
+} from "@/lib/events";
 
-export default function Home() {
-  const [payload, setPayload] = useState<unknown>(null);
-  const [state, setState] = useState("Carregando...");
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
-  useEffect(() => {
-    fetch("/api/health")
-      .then((r) => r.json())
-      .then((d) => {
-        setPayload(d);
-        setState(d.ok ? "ok" : "falhou");
-      })
-      .catch(() => setState("falhou"));
-  }, []);
+export default async function CatalogPage({
+  searchParams,
+}: Readonly<{
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}>) {
+  const filters = filtersFrom(await searchParams);
+  const invertedPeriod = isInvertedPeriod(filters);
+
+  const [cities, listing] = await Promise.all([
+    read<CitiesResult>("/events/cities"),
+    invertedPeriod
+      ? null
+      : read<EventListResult>("/events", apiSearchParams(filters)),
+  ]);
+
+  if (listing?.ok && listing.data.items.length === 0 && listing.data.total > 0) {
+    redirect(
+      catalogHref({
+        ...filters,
+        page: lastPageOf(listing.data.pageSize, listing.data.total),
+      }),
+    );
+  }
 
   return (
-    <main className="p-6 font-mono text-sm">
-      <p>Api: {state}</p>
-      <pre className="mt-2 overflow-x-auto">
-        {JSON.stringify(payload, null, 2)}
-      </pre>
-    </main>
+    <div className="flex min-h-full flex-col">
+      <header className="flex items-center justify-between gap-3 border-b px-4 py-3">
+        <p className="font-semibold">Ingressos</p>
+        <Link href="/login" className="inline-flex min-h-11 items-center rounded border px-4">
+          Entrar
+        </Link>
+      </header>
+
+      <main className="flex flex-1 flex-col gap-6 px-4 py-6">
+        <h1 className="text-xl font-semibold">Eventos</h1>
+
+        <CatalogFilterForm
+          filters={filters}
+          cities={cities.ok ? cities.data.cities : []}
+        />
+
+        {listing ? (
+          <CatalogResults filters={filters} listing={listing} />
+        ) : (
+          <p>
+            Ajuste o período para ver os eventos: o fim não pode ser anterior ao
+            início.
+          </p>
+        )}
+      </main>
+    </div>
   );
 }

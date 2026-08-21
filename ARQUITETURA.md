@@ -150,9 +150,11 @@ A escolha de colocar essas garantias no banco não é estilística. As três pri
 
 ## 6. Ciclos de vida
 
-**Pedido.** Nasce pendente com prazo de dez minutos, ocupando estoque. Segue para pago quando uma autorização é aprovada, para expirado quando o prazo vence sem aprovação, ou para cancelado por ação do cliente sobre um pedido já pago. Autorização recusada não altera o estado: a reserva continua viva e o cliente pode tentar outro cartão sem perder o lugar.
+**Pedido.** Nasce pendente com prazo de dez minutos, ocupando estoque. Segue para pago quando uma autorização é aprovada, ou para expirado quando o prazo vence sem aprovação. Autorização recusada não altera o estado: a reserva continua viva e o cliente pode tentar outro cartão sem perder o lugar.
 
-**Ingresso.** Nasce válido junto com a aprovação do pagamento. Segue para usado na primeira validação bem sucedida, ou para cancelado quando o pedido é cancelado. Não retorna de usado.
+**Ingresso.** Nasce válido junto com a aprovação do pagamento. Segue para usado na primeira validação bem sucedida. Não retorna de usado.
+
+O estado cancelado de pedido e de ingresso existe no modelo e no banco, e hoje não tem caminho pela API: nenhuma rota o produz, e o cancelamento com devolução ao estoque é opcional declarado da fase 6 no `ROADMAP.md`. A consequência prática é que a transição para cancelado descrita adiante é desenho previsto, e não comportamento em vigor. A portaria já tem veredito próprio para ingresso cancelado, e ele só se alcança escrevendo o estado direto no banco.
 
 **Evento.** Nasce rascunho, torna-se publicado por ação do organizador, pode ser cancelado. Apenas eventos publicados aparecem na listagem pública e aceitam compra.
 
@@ -169,8 +171,8 @@ Transições são comandos, expostos como rotas de ação, e não como atualiza�
 | Ingresso de outro evento                     | Comparação com o evento da sessão de portaria produz veredito específico, sem consumir o ingresso     |
 | Ingresso de pedido cancelado                 | Veredito próprio, distinto de inválido                                                                |
 | Assinatura adulterada ou de outra chave      | Recusado antes de qualquer consulta ao banco                                                          |
-| Cancelamento de pedido com ingresso já usado | Recusado, o que também impede violar a restrição de coerência                                         |
-| Cancelamento após o início do evento         | Recusado                                                                                              |
+| Cancelamento de pedido com ingresso já usado | Precondição do cancelamento previsto, que também impede violar a restrição de coerência               |
+| Cancelamento após o início do evento         | Precondição do cancelamento previsto, que ainda não tem rota                                          |
 
 ## 7. Fluxos críticos
 
@@ -221,7 +223,7 @@ A varredura seleciona pedidos vencidos com `for update skip locked`, agrega as q
 
 ### Cancelamento
 
-Opera com sinal invertido em relação à reserva, devolvendo ocupação e marcando os ingressos como cancelados. Exige que o pedido esteja pendente ou pago, que nenhum ingresso dele tenha sido usado, e que o evento ainda não tenha começado. A segunda precondição é também o que impede violar a restrição de coerência entre estado e hora de uso.
+Ainda não implementado, e descrito aqui como desenho previsto. Opera com sinal invertido em relação à reserva, devolvendo ocupação e marcando os ingressos como cancelados. Exige que o pedido esteja pendente ou pago, que nenhum ingresso dele tenha sido usado, e que o evento ainda não tenha começado. A segunda precondição é também o que impede violar a restrição de coerência entre estado e hora de uso.
 
 ### Validação
 
@@ -305,7 +307,7 @@ Na criação do evento, o item completo é preservado em `external_snapshot`, os
 | POST   | `/orders`                          | cliente     | reserva estoque                                             |
 | GET    | `/orders/:id`                      | dono        | estado, itens e, quando pago, os ingressos emitidos         |
 | POST   | `/orders/:id/payment`              | dono        | autoriza e emite                                            |
-| POST   | `/orders/:id/cancel`               | dono        | cancela e devolve estoque                                   |
+| POST   | `/orders/:id/cancel`               | dono        | **não implementada**, prevista para a fase 6                |
 | GET    | `/me/tickets`                      | cliente     | ingressos do usuário                                        |
 | GET    | `/tickets/:id`                     | dono        | ingresso com payload do código                              |
 | POST   | `/tickets/:id/share`               | dono        | gera link                                                   |

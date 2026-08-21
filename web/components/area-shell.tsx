@@ -17,7 +17,7 @@ export async function AreaShell({ children }: { children?: React.ReactNode }) {
     }
 
     return (
-      <main className="mx-auto flex min-h-full w-full max-w-3xl flex-col items-start gap-4 px-4 py-6">
+      <main className="mx-auto flex min-h-full w-full max-w-3xl flex-col items-start gap-5 px-4 py-6">
         <h1 className="text-xl font-semibold">Área indisponível</h1>
         <p className="text-muted">{messageFor(result.code)}</p>
         <RetryButton />
@@ -40,7 +40,7 @@ export async function AreaShell({ children }: { children?: React.ReactNode }) {
       </header>
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
-        <h1 className="text-xl font-semibold tracking-tight">
+        <h1 className="text-xl font-bold">
           {AREA_TITLE[me.role]}
         </h1>
         <p className="mt-1 text-sm text-muted">{me.name}</p>

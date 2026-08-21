@@ -44,7 +44,7 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={entrar} className="flex flex-col gap-4">
+    <form onSubmit={entrar} className="flex flex-col gap-3">
       <label className="flex flex-col gap-1">
         <span className="label">E-mail</span>
         <input

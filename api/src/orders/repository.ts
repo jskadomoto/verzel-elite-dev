@@ -1,6 +1,7 @@
 import type { Pool, PoolClient } from "pg";
 import { pool } from "../db/pool";
 import type {
+  ExpirySweep,
   NewOrder,
   OrderItem,
   OrderRecord,
@@ -123,6 +124,60 @@ export async function findItems(
     [orderId],
   );
   return rows.map(toItem);
+}
+
+export async function expireOverdueOrders(
+  limit: number,
+  db: PoolClient,
+): Promise<ExpirySweep> {
+  const { rows } = await db.query<{
+    expired_orders: number;
+    released_units: number;
+  }>(
+    `with overdue as materialized (
+       select id from orders
+       where status = 'PENDING' and hold_expires_at <= now()
+       order by hold_expires_at
+       limit $1
+       for update skip locked
+     ),
+     per_tier as materialized (
+       select item.tier_id, sum(item.quantity)::int as quantity
+       from order_items item
+       join overdue on overdue.id = item.order_id
+       group by item.tier_id
+     ),
+     locked_in_tier_order as materialized (
+       select tier.id, per_tier.quantity
+       from per_tier
+       join ticket_tiers tier on tier.id = per_tier.tier_id
+       order by tier.id
+       for update of tier
+     ),
+     released as (
+       update ticket_tiers tier
+       set allocated = tier.allocated - locked_in_tier_order.quantity,
+           updated_at = now()
+       from locked_in_tier_order
+       where tier.id = locked_in_tier_order.id
+       returning locked_in_tier_order.quantity
+     ),
+     expired as (
+       update orders
+       set status = 'EXPIRED', updated_at = now()
+       from overdue
+       where orders.id = overdue.id
+       returning orders.id
+     )
+     select
+       (select count(*) from expired)::int as expired_orders,
+       (select coalesce(sum(quantity), 0) from released)::int as released_units`,
+    [limit],
+  );
+  return {
+    expiredOrders: rows[0].expired_orders,
+    releasedUnits: rows[0].released_units,
+  };
 }
 
 export async function updateTotal(

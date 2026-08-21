@@ -1,6 +1,7 @@
 import { createApp } from "./app";
 import { ENV } from "./env";
 import { migrate } from "./db/migrate";
+import { startExpirySweeper } from "./orders/service";
 
 async function main() {
   await migrate();
@@ -11,8 +12,13 @@ async function main() {
     console.log(`Api ouvindo em :${ENV.PORT} (${ENV.NODE_ENV})`);
   });
 
+  const stopExpirySweeper = startExpirySweeper();
+
   for (const sinal of ["SIGTERM", "SIGINT"] as const) {
-    process.on(sinal, () => server.close(() => process.exit(0)));
+    process.on(sinal, () => {
+      stopExpirySweeper();
+      server.close(() => process.exit(0));
+    });
   }
 }
 

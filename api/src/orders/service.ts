@@ -5,11 +5,35 @@ import * as repository from "./repository";
 import type {
   CreatedOrder,
   CreateOrderInput,
+  ExpirySweep,
   OrderItemInput,
   PricedItem,
 } from "./types";
 
 export const HOLD_MINUTES = 10;
+export const SWEEP_LIMIT = 200;
+export const SWEEP_INTERVAL_MS = 60_000;
+
+export async function expireOverdue(): Promise<ExpirySweep> {
+  return withTransaction((client) =>
+    repository.expireOverdueOrders(SWEEP_LIMIT, client),
+  );
+}
+
+async function attemptExpirySweep(): Promise<void> {
+  try {
+    await expireOverdue();
+  } catch (err) {
+    console.warn("Varredura de expiração falhou.", (err as Error).message);
+  }
+}
+
+export function startExpirySweeper(): () => void {
+  const timer = setInterval(attemptExpirySweep, SWEEP_INTERVAL_MS);
+  timer.unref();
+  return () => clearInterval(timer);
+}
+
 function requireDistinctTiers(items: OrderItemInput[]) {
   const seen = new Set<string>();
 
@@ -36,6 +60,7 @@ export async function create(
   input: CreateOrderInput,
 ): Promise<CreatedOrder> {
   requireDistinctTiers(input.items);
+  await attemptExpirySweep();
 
   return withTransaction(async (client) => {
     const repeated = await repository.findByKey(

@@ -48,3 +48,8 @@ export type CreatedOrder = {
   order: OrderWithItems;
   created: boolean;
 };
+
+export type ExpirySweep = {
+  expiredOrders: number;
+  releasedUnits: number;
+};

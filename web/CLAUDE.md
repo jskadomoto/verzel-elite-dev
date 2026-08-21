@@ -68,6 +68,16 @@ Razão de não haver exceção: comentário não é verificado por nada e fica p
 
 Diretiva exigida por ferramenta, como `@ts-expect-error`, não é comentário neste sentido.
 
+## Cabeçalho
+
+Um componente só, `SiteHeader`, com duas variações: nas páginas públicas o atalho leva à área do papel de quem está logado, e na área logada leva ao catálogo. Sem sessão, o mesmo componente mostra "Entrar". Duas superfícies com cabeçalhos separados foi o que produziu o defeito de a home exibir "Entrar" para quem já estava logado.
+
+**A portaria é a exceção e não recebe o atalho do catálogo.** Ela é tela de trabalho de uma função só, operada de pé na entrada do evento, e ali navegação para o catálogo é distração, não caminho. O operador continua com "Sair". A exceção vale só nesse sentido: a portaria que estiver no catálogo continua vendo o atalho de volta para a sua área, porque aí ela já saiu do trabalho.
+
+As páginas públicas leem a sessão com `getSession`, que decodifica o cookie localmente e devolve nulo diante de qualquer problema. **Essa leitura é só para exibição**: ela não confere assinatura, como o middleware também não confere. Toda leitura de dado continua passando pelo BFF com o token, onde o backend valida de verdade. Ausência de sessão nunca pode virar erro numa página pública.
+
+Só o catálogo e a página do evento recebem o cabeçalho, e as duas já eram dinâmicas antes disso. Login e as páginas de erro seguem estáticas, e é por isso que não leem o cookie.
+
 ## Telas e o que cada uma precisa acertar
 
 **Catálogo público.** Data, local e preço visíveis no card. Busca no servidor, refletida na query string, para que o link seja compartilhável e o botão voltar funcione. Estado vazio que diz o que fazer, nunca lista em branco.

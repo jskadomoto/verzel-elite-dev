@@ -8,7 +8,9 @@
     "dev": "tsx watch --env-file=.env src/server.ts",
     "build": "tsc && cp -r src/db/migrations dist/db/migrations && cp src/catalog/fixtures.json dist/catalog/fixtures.json",
     "start": "node dist/server.js",
-    "seed": "tsx --env-file=.env src/db/seed.ts"
+    "seed": "tsx --env-file=.env src/db/seed.ts",
+    "test": "tsx --env-file=.env --test tests/*.test.ts",
+    "test:repeat": "for i in 1 2 3 4 5; do echo \"execução $i\"; tsx --env-file=.env --test tests/*.test.ts || exit 1; done"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

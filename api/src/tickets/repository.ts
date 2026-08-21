@@ -132,17 +132,25 @@ export async function findByOrders(
   return byOrder;
 }
 
+export const HOLDER_PAGE_SIZE = 60;
+
 export async function findByHolder(
   holderUserId: string,
   db: Executor = pool,
-): Promise<TicketRecord[]> {
-  const { rows } = await db.query<TicketRow>(
-    `select ${TICKET_COLUMNS} from tickets
+): Promise<{ items: TicketRecord[]; total: number }> {
+  const { rows } = await db.query<TicketRow & { total: string }>(
+    `select ${TICKET_COLUMNS}, count(*) over() as total
+     from tickets
      where holder_user_id = $1
-     order by created_at desc, seat_label`,
-    [holderUserId],
+     order by created_at desc, seat_label
+     limit $2`,
+    [holderUserId, HOLDER_PAGE_SIZE],
   );
-  return rows.map(toTicket);
+
+  return {
+    items: rows.map(toTicket),
+    total: rows[0] ? Number(rows[0].total) : 0,
+  };
 }
 
 export async function findOwned(

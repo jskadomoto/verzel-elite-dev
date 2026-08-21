@@ -80,7 +80,7 @@ export async function getOwned(
   return { ...order, items, tickets: issued };
 }
 
-export const FIRST_PAGE = 0;
+const FIRST_PAGE = 0;
 
 function eventOf(
   event: EventRecord | undefined,

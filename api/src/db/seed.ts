@@ -116,7 +116,7 @@ async function seedPublishedEvent(
 }
 
 const seededTicketsOf = async (eventId: string, holderUserId: string) =>
-  (await tickets.findByHolder(holderUserId))
+  (await tickets.findByHolder(holderUserId)).items
     .filter((ticket) => ticket.eventId === eventId)
     .sort((one, other) => one.seatLabel.localeCompare(other.seatLabel));
 

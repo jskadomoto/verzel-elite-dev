@@ -16,6 +16,7 @@ import type {
   SharedTicket,
   TicketDetail,
   TicketEvent,
+  TicketListResult,
   TicketRecord,
   TicketSummary,
   TicketTier,
@@ -143,13 +144,14 @@ const tiersById = (byEvent: Map<string, Tier[]>) => {
   return byId;
 };
 
+const FIRST_PAGE = 0;
+
 export async function listOwned(
   holderUserId: string,
-): Promise<{ tickets: TicketSummary[] }> {
-  const owned = await repository.findByHolder(holderUserId);
-  if (!owned.length) return { tickets: [] };
+): Promise<TicketListResult> {
+  const { items, total } = await repository.findByHolder(holderUserId);
 
-  const eventIds = [...new Set(owned.map((ticket) => ticket.eventId))];
+  const eventIds = [...new Set(items.map((ticket) => ticket.eventId))];
   const [byEventId, tiersByEvent] = await Promise.all([
     events.findByIds(eventIds),
     events.findTiersOf(eventIds),
@@ -157,13 +159,16 @@ export async function listOwned(
   const byTierId = tiersById(tiersByEvent);
 
   return {
-    tickets: owned.map((ticket) =>
+    items: items.map((ticket) =>
       toSummary(
         ticket,
         eventOf(byEventId.get(ticket.eventId), ticket),
         tierOf(byTierId.get(ticket.tierId), ticket),
       ),
     ),
+    page: FIRST_PAGE,
+    pageSize: repository.HOLDER_PAGE_SIZE,
+    total,
   };
 }
 

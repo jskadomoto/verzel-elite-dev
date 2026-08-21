@@ -125,6 +125,7 @@ A topologia também é escolhida aqui de forma a eliminar o problema mais chato 
 - Links da aplicação publicada no topo do README, junto do aviso de hibernação.
 - Página do organizador além do fim da lista cai no estado vazio de "você ainda não tem eventos", em vez de redirecionar para a última página válida como o catálogo público faz.
 - Metadados de página no detalhe público do evento, hoje genéricos, o que deixa o link compartilhado sem prévia útil.
+- O `.gitignore` do scaffold do Next ignora todo `.env*`, então `web/.env.example` nunca foi versionado e quem clona não descobre que o front precisa de `API_URL`. O template da api está versionado; o do front precisa de exceção explícita no ignore.
 
 ---
 

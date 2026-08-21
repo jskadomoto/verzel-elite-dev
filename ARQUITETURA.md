@@ -411,9 +411,9 @@ O número não foi inflado para o teste. O mesmo limite de pool vale na instânc
 
 Validação dupla: o mesmo código submetido duas vezes em paralelo produz uma aprovação e um já utilizado, com a hora de uso preenchida uma única vez.
 
-Código forjado: assinatura alterada e assinatura produzida com outra chave são rejeitadas antes da consulta.
+Código forjado: assinatura alterada e assinatura produzida com outra chave, ambas com o formato correto para falharem na conferência e não na leitura, recebem veredito de inválido sem consumir o ingresso. O id que viaja no payload forjado não vira identidade: a tentativa entra no log sem ingresso associado, guardando o payload sem o segmento de assinatura. O código verdadeiro continua valendo depois das duas tentativas, que é o que impede o teste de passar por acidente.
 
-Autorização: papel incorreto é recusado, recurso de outro organizador responde como inexistente, e ingresso de evento diferente do selecionado produz o veredito específico.
+Autorização: papel incorreto recebe 403 enquanto sessão ausente ou inválida recebe 401, e recurso de outro dono responde como inexistente, com corpo idêntico ao de um identificador que nunca existiu, para que a resposta não confirme a existência. Isso vale para evento de outro organizador em leitura, edição, publicação, cancelamento e atribuição de portaria, para pedido e ingresso de outro cliente, e para portaria não atribuída ao evento, que além do 404 não escreve linha na auditoria daquele evento. Ingresso de evento diferente do selecionado produz o veredito específico, sem devolver lugar nem setor e sem consumir o ingresso, que em seguida passa normalmente na portaria do evento certo.
 
 Os testes sobem a própria aplicação em porta efêmera de loopback, sorteada pelo sistema, o que é o motivo de a montagem do Express estar separada da abertura do servidor. Nenhum teste depende do servidor de desenvolvimento estar de pé nem ocupa a porta configurada, e a requisição atravessa rota, validação, serviço e repositório como qualquer outra.
 

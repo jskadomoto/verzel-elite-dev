@@ -24,8 +24,8 @@ export default async function SharedTicketPage({
     if (result.status === 404) notFound();
 
     return (
-      <main className="mx-auto flex min-h-full w-full max-w-lg flex-col items-start gap-4 px-4 py-6">
-        <h1 className="text-xl font-semibold">Ingresso indisponível</h1>
+      <main className="mx-auto flex min-h-full w-full max-w-lg flex-col items-start gap-5 px-4 py-6">
+        <h1 className="text-xl font-bold">Ingresso indisponível</h1>
         <p className="text-muted">{messageFor(result.code)}</p>
         <RetryButton />
       </main>

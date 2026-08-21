@@ -19,10 +19,10 @@ export function TicketEventHeading({
 }: Readonly<{ event: TicketEvent }>) {
   return (
     <header className="flex flex-col gap-2">
-      <h1 className="text-2xl font-semibold tracking-tight break-words">
+      <h1 className="text-2xl font-extrabold break-words">
         {event.title}
       </h1>
-      <p className="text-sm text-brand">
+      <p className="text-sm font-medium text-gold">
         {formatEventDateTimeLong(event.startsAt, event.timezone)}
       </p>
       <p className="text-sm break-words text-muted">
@@ -42,15 +42,11 @@ export function TicketFace({
     <section className="relative overflow-hidden rounded-xl border border-line bg-surface">
       <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2 px-4 pt-4 pb-5">
         <div className="flex min-w-0 flex-col">
-          <span className="text-xs tracking-widest text-faint uppercase">
-            Setor
-          </span>
+          <span className="micro-label">Setor</span>
           <span className="text-lg font-semibold break-words">
             {ticket.tier.name}
           </span>
-          <span className="font-mono text-sm text-muted">
-            lugar {ticket.seatLabel}
-          </span>
+          <span className="font-mono text-sm text-muted">lugar {ticket.seatLabel}</span>
         </div>
 
         <span

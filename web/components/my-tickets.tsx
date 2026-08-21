@@ -15,7 +15,7 @@ export async function MyTickets() {
 
   if (!result.ok) {
     return (
-      <section className="mt-5 flex flex-col items-start gap-3">
+      <section className="mt-8 flex flex-col items-start gap-3">
         <p className="text-muted">{messageFor(result.code)}</p>
         <RetryButton />
       </section>
@@ -26,7 +26,7 @@ export async function MyTickets() {
 
   if (!groups.length) {
     return (
-      <section className="card mt-5 flex flex-col items-start gap-3">
+      <section className="card mt-8 flex flex-col items-start gap-3">
         <p>Você ainda não tem ingressos.</p>
         <p className="text-sm text-muted">
           Escolha um evento no catálogo, reserve e pague para receber o código de
@@ -40,14 +40,14 @@ export async function MyTickets() {
   }
 
   return (
-    <section className="mt-5 flex flex-col gap-4">
+    <section className="mt-8 flex flex-col gap-4">
       <h2 className="sr-only">Meus ingressos</h2>
 
       {groups.map(({ event, tickets }) => (
         <article key={event.id} className="card flex flex-col gap-3">
           <header className="flex flex-col gap-1">
             <h3 className="text-lg font-semibold break-words">{event.title}</h3>
-            <p className="text-sm text-brand">
+            <p className="text-sm font-medium text-gold">
               {formatEventDateTimeLong(event.startsAt, event.timezone)}
             </p>
             <p className="text-sm break-words text-muted">

@@ -1,32 +1,35 @@
 @import "tailwindcss";
 
 @theme {
-  --color-ink: #0b0d13;
-  --color-ink-deep: #05060a;
-  --color-surface: #141824;
-  --color-surface-raised: #1c2130;
-  --color-line: #2a3142;
-  --color-line-strong: #414a61;
+  --color-ink: #150f1c;
+  --color-ink-deep: #0b0710;
+  --color-surface: #201829;
+  --color-surface-raised: #2b2136;
+  --color-line: #3d3049;
+  --color-line-strong: #5d4c6e;
 
-  --color-text: #f3f5fa;
-  --color-muted: #a8b2c7;
-  --color-faint: #7c879e;
+  --color-text: #faf6ff;
+  --color-muted: #cbbfd9;
+  --color-faint: #a494b5;
 
-  --color-brand: #ffc148;
-  --color-brand-strong: #ffd688;
-  --color-on-brand: #1a1204;
+  --color-brand: #c4a2ff;
+  --color-brand-strong: #d8c2ff;
+  --color-on-brand: #1b0f2b;
 
-  --color-success: #34d399;
+  --color-gold: #ffbe3d;
+  --color-gold-strong: #ffd275;
+
+  --color-success: #3ee08f;
   --color-attention: #fbbf24;
-  --color-info: #7dd3fc;
-  --color-danger: #fb7185;
-  --color-inert: #d4dae6;
-  --color-on-status: #0a0c11;
+  --color-info: #7cc4ff;
+  --color-danger: #ff6b81;
+  --color-inert: #ded5ea;
+  --color-on-status: #120c18;
 
   --color-paper: #ffffff;
 
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 
   --text-xs: 0.75rem;
   --text-xs--line-height: 1.45;
@@ -40,8 +43,10 @@
   --text-xl--line-height: 1.3;
   --text-2xl: 1.75rem;
   --text-2xl--line-height: 1.2;
+  --text-2xl--letter-spacing: -0.02em;
   --text-3xl: 2.25rem;
   --text-3xl--line-height: 1.1;
+  --text-3xl--letter-spacing: -0.02em;
 
   --spacing: 0.25rem;
 
@@ -124,6 +129,17 @@
 
 @utility label {
   @apply text-sm font-medium text-muted;
+}
+
+@utility micro-label {
+  @apply text-xs font-semibold tracking-[0.14em] text-faint uppercase;
+}
+
+@utility btn-gold {
+  @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2
+    rounded-md bg-gold px-4 text-base font-semibold text-on-status
+    transition-colors hover:bg-gold-strong
+    disabled:pointer-events-none disabled:opacity-55;
 }
 
 @utility chip {

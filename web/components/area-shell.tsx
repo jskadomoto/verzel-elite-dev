@@ -2,9 +2,8 @@ import { redirect } from "next/navigation";
 import { readAuthed } from "@/lib/api";
 import { messageFor } from "@/lib/errors";
 import { AREA_TITLE, type Role } from "@/lib/roles";
-import { BrandMark } from "./brand-mark";
-import { LogoutButton } from "./logout-button";
 import { RetryButton } from "./retry-button";
+import { SiteHeader } from "./site-header";
 
 type Me = { id: string; name: string; email: string; role: Role };
 
@@ -29,21 +28,15 @@ export async function AreaShell({ children }: { children?: React.ReactNode }) {
 
   return (
     <div className="flex min-h-full flex-col">
-      <header className="border-b border-line">
-        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-3">
-          <div className="flex min-w-0 flex-col">
-            <BrandMark />
-            <p className="truncate text-sm text-faint">{me.email}</p>
-          </div>
-          <LogoutButton />
-        </div>
-      </header>
+      <SiteHeader
+        identity={{ name: me.name, role: me.role }}
+        surface="area"
+        width="max-w-3xl"
+      />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
-        <h1 className="text-xl font-bold">
-          {AREA_TITLE[me.role]}
-        </h1>
-        <p className="mt-1 text-sm text-muted">{me.name}</p>
+        <h1 className="text-xl font-bold">{AREA_TITLE[me.role]}</h1>
+        <p className="mt-1 truncate text-sm text-muted">{me.email}</p>
         {children}
       </main>
     </div>

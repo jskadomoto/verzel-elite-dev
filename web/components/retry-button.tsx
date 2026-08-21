@@ -16,7 +16,7 @@ export function RetryButton() {
         router.refresh();
         setTimeout(() => setPending(false), 1500);
       }}
-      className="min-h-11 rounded border px-4 text-base disabled:opacity-60"
+      className="btn-quiet"
     >
       {pending ? "Tentando…" : "Tentar novamente"}
     </button>

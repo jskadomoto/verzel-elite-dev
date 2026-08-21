@@ -2,12 +2,12 @@ import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <main className="flex min-h-full flex-col items-start gap-4 px-4 py-6">
-      <h1 className="text-xl font-semibold">Página não encontrada</h1>
-      <p>
+    <main className="mx-auto flex min-h-full w-full max-w-lg flex-col items-start gap-4 px-4 py-10">
+      <h1 className="text-2xl font-semibold tracking-tight">Página não encontrada</h1>
+      <p className="text-muted">
         Este endereço não existe, ou o evento não está publicado no catálogo.
       </p>
-      <Link href="/" className="inline-flex min-h-11 items-center rounded border px-4">
+      <Link href="/" className="btn-quiet">
         Ver eventos publicados
       </Link>
     </main>

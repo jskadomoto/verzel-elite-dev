@@ -46,29 +46,29 @@ export function LoginForm() {
   return (
     <form onSubmit={entrar} className="flex flex-col gap-4">
       <label className="flex flex-col gap-1">
-        <span className="text-sm">E-mail</span>
+        <span className="label">E-mail</span>
         <input
           name="email"
           type="email"
           autoComplete="email"
           required
-          className="min-h-11 w-full rounded border px-3 text-base"
+          className="field"
         />
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-sm">Senha</span>
+        <span className="label">Senha</span>
         <input
           name="password"
           type="password"
           autoComplete="current-password"
           required
-          className="min-h-11 w-full rounded border px-3 text-base"
+          className="field"
         />
       </label>
 
       {error ? (
-        <p role="alert" className="text-sm">
+        <p role="alert" className="alert">
           {error}
         </p>
       ) : null}
@@ -76,7 +76,7 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={pending}
-        className="min-h-11 rounded border px-4 text-base disabled:opacity-60"
+        className="btn-primary"
       >
         {pending ? "Entrando…" : "Entrar"}
       </button>

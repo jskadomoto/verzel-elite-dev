@@ -33,11 +33,11 @@ export function LogoutButton() {
         type="button"
         onClick={sair}
         disabled={pending}
-        className="min-h-11 rounded border px-4 text-base disabled:opacity-60"
+        className="btn-quiet"
       >
         {pending ? "Saindo…" : "Sair"}
       </button>
-      {error ? <p className="text-sm">{error}</p> : null}
+      {error ? <p className="text-sm text-danger">{error}</p> : null}
     </div>
   );
 }

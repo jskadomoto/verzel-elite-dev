@@ -1,11 +1,21 @@
 import type { Pool, PoolClient } from "pg";
 import { pool } from "../db/pool";
-import type { NewTicket, TicketRecord, TicketStatus } from "./types";
+import type {
+  NewTicket,
+  OpenedShare,
+  ShareLink,
+  TicketRecord,
+  TicketStatus,
+} from "./types";
 
 type Executor = Pool | PoolClient;
 
 const TICKET_COLUMNS = `id, order_id, event_id, tier_id, seat_label, status,
   used_at, created_at`;
+
+const SHARE_COLUMNS = `expires_at, opened_count, last_opened_at, created_at`;
+
+const SHARE_IS_ACTIVE = `revoked_at is null and expires_at > now()`;
 
 type TicketRow = {
   id: string;
@@ -17,6 +27,20 @@ type TicketRow = {
   used_at: Date | null;
   created_at: Date;
 };
+
+type ShareRow = {
+  expires_at: Date;
+  opened_count: number;
+  last_opened_at: Date | null;
+  created_at: Date;
+};
+
+const toShare = (row: ShareRow): ShareLink => ({
+  expiresAt: row.expires_at.toISOString(),
+  openedCount: row.opened_count,
+  lastOpenedAt: row.last_opened_at?.toISOString() ?? null,
+  createdAt: row.created_at.toISOString(),
+});
 
 const toTicket = (row: TicketRow): TicketRecord => ({
   id: row.id,
@@ -94,4 +118,90 @@ export async function findOwned(
     [id, holderUserId],
   );
   return rows[0] ? toTicket(rows[0]) : null;
+}
+
+export async function findOwnedForUpdate(
+  id: string,
+  holderUserId: string,
+  db: PoolClient,
+): Promise<TicketRecord | null> {
+  const { rows } = await db.query<TicketRow>(
+    `select ${TICKET_COLUMNS} from tickets
+     where id = $1 and holder_user_id = $2
+     for update`,
+    [id, holderUserId],
+  );
+  return rows[0] ? toTicket(rows[0]) : null;
+}
+
+export async function findById(
+  id: string,
+  db: Executor = pool,
+): Promise<TicketRecord | null> {
+  const { rows } = await db.query<TicketRow>(
+    `select ${TICKET_COLUMNS} from tickets where id = $1`,
+    [id],
+  );
+  return rows[0] ? toTicket(rows[0]) : null;
+}
+
+export async function revokeSharesOf(
+  ticketId: string,
+  db: PoolClient,
+): Promise<number> {
+  const { rowCount } = await db.query(
+    `update share_links set revoked_at = now(), updated_at = now()
+     where ticket_id = $1 and revoked_at is null`,
+    [ticketId],
+  );
+  return rowCount ?? 0;
+}
+
+export async function insertShare(
+  ticketId: string,
+  tokenHash: string,
+  eventStartsAt: string,
+  hoursAfterStart: number,
+  minimumHours: number,
+  db: PoolClient,
+): Promise<ShareLink> {
+  const { rows } = await db.query<ShareRow>(
+    `insert into share_links (ticket_id, token_hash, expires_at)
+     values ($1, $2, greatest(
+       $3::timestamptz + make_interval(hours => $4),
+       now() + make_interval(hours => $5)
+     ))
+     returning ${SHARE_COLUMNS}`,
+    [ticketId, tokenHash, eventStartsAt, hoursAfterStart, minimumHours],
+  );
+  return toShare(rows[0]);
+}
+
+export async function openByTokenHash(
+  tokenHash: string,
+  db: PoolClient,
+): Promise<OpenedShare | null> {
+  const { rows } = await db.query<ShareRow & { ticket_id: string }>(
+    `update share_links
+     set opened_count = opened_count + 1, last_opened_at = now(),
+         updated_at = now()
+     where token_hash = $1 and ${SHARE_IS_ACTIVE}
+     returning ticket_id, ${SHARE_COLUMNS}`,
+    [tokenHash],
+  );
+  return rows[0] ? { ...toShare(rows[0]), ticketId: rows[0].ticket_id } : null;
+}
+
+export async function findActiveShareOf(
+  ticketId: string,
+  db: Executor = pool,
+): Promise<ShareLink | null> {
+  const { rows } = await db.query<ShareRow>(
+    `select ${SHARE_COLUMNS} from share_links
+     where ticket_id = $1 and ${SHARE_IS_ACTIVE}
+     order by created_at desc
+     limit 1`,
+    [ticketId],
+  );
+  return rows[0] ? toShare(rows[0]) : null;
 }

@@ -50,4 +50,27 @@ export type TicketSummary = {
   tier: TicketTier;
 };
 
-export type TicketDetail = TicketSummary & { code: string };
+export type ShareLink = {
+  expiresAt: string;
+  openedCount: number;
+  lastOpenedAt: string | null;
+  createdAt: string;
+};
+
+export type IssuedShareLink = ShareLink & { token: string };
+
+export type OpenedShare = ShareLink & { ticketId: string };
+
+export type TicketDetail = TicketSummary & {
+  code: string;
+  share: ShareLink | null;
+};
+
+export type SharedTicket = {
+  code: string;
+  seatLabel: string;
+  status: TicketStatus;
+  usedAt: string | null;
+  tier: TicketTier;
+  event: TicketEvent;
+};

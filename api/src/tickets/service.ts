@@ -1,10 +1,13 @@
-import { createHmac } from "node:crypto";
+import { createHash, createHmac, randomBytes } from "node:crypto";
+import { withTransaction } from "../db/transaction";
 import { ENV } from "../env";
 import * as events from "../events/repository";
 import type { EventRecord, Tier } from "../events/types";
 import { notFound } from "../http/errors";
 import * as repository from "./repository";
 import type {
+  IssuedShareLink,
+  SharedTicket,
   TicketDetail,
   TicketEvent,
   TicketRecord,
@@ -15,6 +18,9 @@ import type {
 export const CODE_VERSION = "v1";
 export const CODE_SEPARATOR = ".";
 export const SIGNATURE_BYTES = 16;
+export const SHARE_TOKEN_BYTES = 32;
+export const SHARE_HOURS_AFTER_START = 12;
+export const SHARE_MINIMUM_HOURS = 1;
 
 const withoutSeparators = (ticketId: string) => ticketId.replaceAll("-", "");
 
@@ -120,6 +126,86 @@ export async function listOwned(
   };
 }
 
+const hashOf = (token: string) =>
+  createHash("sha256").update(token).digest("hex");
+
+export async function share(
+  ticketId: string,
+  holderUserId: string,
+): Promise<IssuedShareLink> {
+  const token = randomBytes(SHARE_TOKEN_BYTES).toString("base64url");
+
+  return withTransaction(async (client) => {
+    const ticket = await repository.findOwnedForUpdate(
+      ticketId,
+      holderUserId,
+      client,
+    );
+    if (!ticket) throw notFound("Ingresso não encontrado.");
+
+    const event = eventOf(
+      await events.findById(ticket.eventId, client),
+      ticket,
+    );
+
+    await repository.revokeSharesOf(ticket.id, client);
+    const link = await repository.insertShare(
+      ticket.id,
+      hashOf(token),
+      event.startsAt,
+      SHARE_HOURS_AFTER_START,
+      SHARE_MINIMUM_HOURS,
+      client,
+    );
+
+    return { ...link, token };
+  });
+}
+
+export async function revokeShare(
+  ticketId: string,
+  holderUserId: string,
+): Promise<void> {
+  await withTransaction(async (client) => {
+    const ticket = await repository.findOwnedForUpdate(
+      ticketId,
+      holderUserId,
+      client,
+    );
+    if (!ticket) throw notFound("Ingresso não encontrado.");
+
+    await repository.revokeSharesOf(ticket.id, client);
+  });
+}
+
+export async function openShared(token: string): Promise<SharedTicket> {
+  return withTransaction(async (client) => {
+    const opened = await repository.openByTokenHash(hashOf(token), client);
+    if (!opened) throw notFound("Link não encontrado.");
+
+    const ticket = await repository.findById(opened.ticketId, client);
+    if (!ticket) {
+      throw new Error(
+        `Link de compartilhamento aponta para ingresso inexistente: ${opened.ticketId}`,
+      );
+    }
+
+    const [event, tier] = await Promise.all([
+      events.findById(ticket.eventId, client),
+      events.findTierById(ticket.tierId, client),
+    ]);
+
+    return {
+      code: codeFor(ticket.id),
+      seatLabel: ticket.seatLabel,
+      status: ticket.status,
+      usedAt: ticket.usedAt,
+      tier: toTicketTier(tierOf(tier, ticket)),
+      event: toTicketEvent(eventOf(event, ticket)),
+    };
+  });
+}
+
 export async function getOwned(
   ticketId: string,
   holderUserId: string,
@@ -127,13 +213,15 @@ export async function getOwned(
   const ticket = await repository.findOwned(ticketId, holderUserId);
   if (!ticket) throw notFound("Ingresso não encontrado.");
 
-  const [event, tier] = await Promise.all([
+  const [event, tier, share] = await Promise.all([
     events.findById(ticket.eventId),
     events.findTierById(ticket.tierId),
+    repository.findActiveShareOf(ticket.id),
   ]);
 
   return {
     ...toSummary(ticket, eventOf(event, ticket), tierOf(tier, ticket)),
     code: codeFor(ticket.id),
+    share,
   };
 }

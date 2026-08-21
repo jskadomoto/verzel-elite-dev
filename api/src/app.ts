@@ -5,7 +5,7 @@ import { catalogRouter } from "./catalog/route";
 import { eventsRouter } from "./events/routes";
 import { publicEventsRouter } from "./events/public-routes";
 import { ordersRouter } from "./orders/routes";
-import { myTicketsRouter, ticketsRouter } from "./tickets/routes";
+import { myTicketsRouter, shareRouter, ticketsRouter } from "./tickets/routes";
 
 export function createApp() {
   const app = express();
@@ -16,6 +16,7 @@ export function createApp() {
   app.use("/auth", authRouter);
   app.use("/catalog", catalogRouter);
   app.use("/events", publicEventsRouter);
+  app.use("/share", shareRouter);
   app.use("/organizer/events", eventsRouter);
   app.use("/orders", ordersRouter);
   app.use("/me/tickets", myTicketsRouter);

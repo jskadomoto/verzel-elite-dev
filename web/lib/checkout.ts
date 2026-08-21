@@ -102,6 +102,9 @@ export const checkoutHref = (orderId: string) =>
 export const confirmationHref = (orderId: string) =>
   `${checkoutHref(orderId)}/confirmacao`;
 
+export const orderHref = (order: Order) =>
+  order.status === "PAID" ? confirmationHref(order.id) : checkoutHref(order.id);
+
 export const eventHref = (eventId: string) => `/eventos/${eventId}`;
 
 export function newIdempotencyKey(): string {
@@ -116,6 +119,25 @@ export const remainingMsOf = (holdExpiresAt: string, now: number) =>
 
 export const holdIsOver = (order: Order, now: number) =>
   remainingMsOf(order.holdExpiresAt, now) === 0;
+
+export const displayStatusOf = (order: Order, now: number): OrderStatus =>
+  order.status === "PENDING" && holdIsOver(order, now)
+    ? "EXPIRED"
+    : order.status;
+
+export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
+  PENDING: "Aguardando pagamento",
+  PAID: "Pago",
+  EXPIRED: "Reserva expirada",
+  CANCELLED: "Cancelado",
+};
+
+export const ORDER_STATUS_CHIP: Record<OrderStatus, string> = {
+  PENDING: "border-attention/40 bg-attention/15 text-attention",
+  PAID: "border-success/40 bg-success/15 text-success",
+  EXPIRED: "border-line-strong bg-surface-raised text-faint",
+  CANCELLED: "border-danger/50 bg-danger/15 text-danger",
+};
 
 export type CheckoutBlock = "EXPIRED" | "PAID" | "CANCELLED" | "SETTLED";
 

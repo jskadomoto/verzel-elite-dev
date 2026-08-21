@@ -1,4 +1,5 @@
 import { AreaShell } from "@/components/area-shell";
+import { MyOrders } from "@/components/my-orders";
 import { MyTickets } from "@/components/my-tickets";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +9,7 @@ export default function Page() {
   return (
     <AreaShell>
       <MyTickets />
+      <MyOrders />
     </AreaShell>
   );
 }

@@ -26,6 +26,12 @@ export const formatEventDateTime = (instant: string, timezone: string) =>
     timeStyle: "short",
   }).format(new Date(instant));
 
+export const formatHourMinute = (instant: string, timezone: string) =>
+  new Intl.DateTimeFormat("pt-BR", {
+    timeZone: timezone,
+    timeStyle: "short",
+  }).format(new Date(instant));
+
 export const formatClockTime = (instant: string, timezone: string) =>
   new Intl.DateTimeFormat("pt-BR", {
     timeZone: timezone,

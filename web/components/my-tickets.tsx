@@ -40,8 +40,8 @@ export async function MyTickets() {
   }
 
   return (
-    <section className="mt-8 flex flex-col gap-4">
-      <h2 className="sr-only">Meus ingressos</h2>
+    <section className="mt-8 flex flex-col gap-3">
+      <h2 className="micro-label">Meus ingressos</h2>
 
       {groups.map(({ event, tickets }) => (
         <article key={event.id} className="card flex flex-col gap-3">

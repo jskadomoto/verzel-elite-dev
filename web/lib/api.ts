@@ -30,8 +30,21 @@ export type ReadResult<T> =
   | { ok: true; data: T }
   | { ok: false; status: number; code: string };
 
-export async function readAuthed<T>(path: string): Promise<ReadResult<T>> {
-  const response = await forwardAuthed(path);
+export async function read<T>(
+  path: string,
+  search?: URLSearchParams,
+): Promise<ReadResult<T>> {
+  return resultOf(await forward(path, { search }));
+}
+
+export async function readAuthed<T>(
+  path: string,
+  search?: URLSearchParams,
+): Promise<ReadResult<T>> {
+  return resultOf(await forwardAuthed(path, { search }));
+}
+
+async function resultOf<T>(response: Response): Promise<ReadResult<T>> {
   const payload = await response.json().catch(() => null);
 
   if (!response.ok) {

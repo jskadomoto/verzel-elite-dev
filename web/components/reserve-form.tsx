@@ -81,7 +81,7 @@ export function ReserveForm({
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <ul className="flex flex-col gap-3">
         {tiers.map((tier) => {
           const soldOut = tier.available === 0;
@@ -93,7 +93,7 @@ export function ReserveForm({
             >
               <div className="flex items-baseline justify-between gap-3">
                 <p className="font-medium break-words">{tier.name}</p>
-                <p className="text-lg font-semibold whitespace-nowrap text-brand">
+                <p className="text-lg font-bold whitespace-nowrap text-gold">
                   {formatBrl(tier.priceCents)}
                 </p>
               </div>
@@ -138,7 +138,7 @@ export function ReserveForm({
               ? "Nenhum ingresso selecionado"
               : `${seats} ${seats === 1 ? "ingresso" : "ingressos"}`}
           </p>
-          <p className="text-xl font-semibold whitespace-nowrap">
+          <p className="text-xl font-bold whitespace-nowrap text-gold">
             {formatBrl(total)}
           </p>
         </div>

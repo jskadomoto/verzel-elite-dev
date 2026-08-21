@@ -10,11 +10,11 @@ export function EventCard({ event }: { event: PublicEventSummary }) {
       href={`/eventos/${event.id}`}
       className="group flex w-full min-h-11 flex-col gap-2 rounded-lg border border-line bg-surface p-4 transition-colors hover:border-brand"
     >
-      <p className="text-sm font-medium text-brand">
+      <p className="text-sm font-medium text-gold">
         {formatEventDateTime(event.startsAt, event.timezone)}
       </p>
 
-      <h2 className="text-lg font-semibold tracking-tight break-words group-hover:text-brand">
+      <h2 className="text-lg font-bold break-words group-hover:text-brand">
         {event.title}
       </h2>
 
@@ -26,7 +26,7 @@ export function EventCard({ event }: { event: PublicEventSummary }) {
         ) : (
           <>
             <span className="text-faint">A partir de </span>
-            <span className="font-semibold">
+            <span className="font-bold text-gold">
               {formatBrl(event.priceFromCents)}
             </span>
           </>

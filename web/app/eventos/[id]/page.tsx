@@ -30,8 +30,8 @@ export default async function EventPage({
     if (result.status === 404) notFound();
 
     return (
-      <main className="mx-auto flex min-h-full w-full max-w-2xl flex-col items-start gap-4 px-4 py-6">
-        <h1 className="text-xl font-semibold">Evento indisponível</h1>
+      <main className="mx-auto flex min-h-full w-full max-w-2xl flex-col items-start gap-5 px-4 py-6">
+        <h1 className="text-xl font-bold">Evento indisponível</h1>
         <p className="text-muted">{messageFor(result.code)}</p>
         <RetryButton />
       </main>
@@ -42,17 +42,17 @@ export default async function EventPage({
   const place = event.state ? `${event.city}, ${event.state}` : event.city;
 
   return (
-    <main className="mx-auto flex min-h-full w-full max-w-2xl flex-col gap-6 px-4 py-6">
+    <main className="mx-auto flex min-h-full w-full max-w-2xl flex-col gap-8 px-4 py-6">
       <Link href="/" className="back-link">
         ← Catálogo
       </Link>
 
       <header className="flex flex-col gap-3">
         <span className="chip self-start">{event.category}</span>
-        <h1 className="text-2xl font-semibold tracking-tight break-words">
+        <h1 className="text-2xl font-extrabold break-words">
           {event.title}
         </h1>
-        <p className="text-brand">
+        <p className="font-medium text-gold">
           {formatEventDateTimeLong(event.startsAt, event.timezone)}
         </p>
         <p className="break-words">{`${event.venueName} · ${place}`}</p>
@@ -118,7 +118,7 @@ function TierRow({ tier }: Readonly<{ tier: Tier }>) {
     <div className={`card flex flex-col gap-2 ${soldOut ? "opacity-60" : ""}`}>
       <div className="flex items-baseline justify-between gap-3">
         <p className="font-medium break-words">{tier.name}</p>
-        <p className="text-lg font-semibold whitespace-nowrap text-brand">
+        <p className="text-lg font-bold whitespace-nowrap text-gold">
           {formatBrl(tier.priceCents)}
         </p>
       </div>

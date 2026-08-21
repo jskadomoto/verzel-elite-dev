@@ -11,7 +11,7 @@ export function AvailabilityBar({
     >
       <span
         className={`block h-full rounded-full ${
-          available === 0 ? "bg-danger" : "bg-brand"
+          available === 0 ? "bg-danger" : "bg-gold"
         }`}
         style={{ width: `${Math.round(taken * 100)}%` }}
       />

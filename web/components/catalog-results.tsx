@@ -19,7 +19,7 @@ export function CatalogResults({
 }) {
   if (!listing.ok) {
     return (
-      <div className="flex flex-col items-start gap-4">
+      <div className="flex flex-col items-start gap-5">
         <p className="text-muted">{messageFor(listing.code)}</p>
         <RetryButton />
       </div>
@@ -61,7 +61,7 @@ function EmptyCatalog({ filtered }: { filtered: boolean }) {
   }
 
   return (
-    <div className="card flex flex-col items-start gap-4">
+    <div className="card flex flex-col items-start gap-3">
       <p>
         Nenhum evento encontrado com esses filtros. Tente outro termo, outra
         cidade ou um período maior.

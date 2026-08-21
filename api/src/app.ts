@@ -13,9 +13,6 @@ export function createApp() {
   app.use("/", require("./routes").router);
   app.use("/auth", authRouter);
   app.use("/catalog", catalogRouter);
-  // O catálogo público vem antes do organizador e num caminho disjunto. Não há
-  // guarda de autenticação em nível de aplicação: requireAuth só existe dentro
-  // de cada router, então nenhum middleware de sessão alcança /events.
   app.use("/events", publicEventsRouter);
   app.use("/organizer/events", eventsRouter);
 

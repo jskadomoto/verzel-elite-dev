@@ -430,6 +430,24 @@ Os testes sobem a própria aplicação em porta efêmera de loopback, sorteada p
 
 **Sem versionamento do código do ingresso.** A coluna e a verificação correspondentes só se justificam com uma operação de reemissão, que não existe.
 
+**Biblioteca para gerar o símbolo QR, em vez de implementar o algoritmo.** É a única dependência de terceiro no front além do próprio framework, e foi autorizada caso a caso. O que ela faz é uma coisa só: recebe a cadeia e devolve uma matriz de booleanos. O desenho é do projeto, e é isso que permite a zona de silêncio explícita, o fundo opaco que sobrevive ao tema escuro do sistema, e a marcação de estado que o ingresso usado e o cancelado exigem.
+
+Duas alternativas foram descartadas por motivos diferentes do que parece.
+
+Serviço externo de geração saiu por segurança, não por conectividade: o payload é credencial de entrada, e mandá-lo para um gerador de imagens de terceiro entrega a quem estiver do outro lado o código que abre a catraca.
+
+Implementar o algoritmo à mão saiu pelo modo de falha, não pela dificuldade. Gerar QR exige Reed-Solomon sobre um campo finito, informação de formato com código corretor próprio, e a escolha entre oito máscaras por regras de penalidade. Erro em qualquer uma dessas partes não produz símbolo quebrado: produz símbolo válido e pior, que lê num monitor e falha contra reflexo, em ângulo ou com foco ruim. A falha apareceria em dispositivo real, depois do teste local ter passado, que é o pior lugar para descobri-la.
+
+**Nível de correção Q para o código do ingresso.** Para os cinquenta e oito caracteres do payload, o nível M cabe na versão 4, com trinta e três módulos de lado, e o Q exige a versão 5, com trinta e sete. Num símbolo de 320 pixels contando a zona de silêncio, isso é 7,8 contra 7,1 pixels por módulo: os dois muito acima do que qualquer câmera de celular precisa, o que torna o custo do nível maior irrelevante. O ganho não é: o ingresso é apresentado em tela iluminada, onde reflexo é oclusão, e oclusão é exatamente o que a correção de erro recupera.
+
+**Um decodificador só na portaria, sem o detector nativo do navegador.** O `BarcodeDetector` não existe no Safari do iOS nem no Firefox, então uma biblioteca precisa existir de qualquer forma. Usá-la apenas onde o detector falta criaria dois caminhos e dois comportamentos, e o caminho que não se consegue testar aqui é justamente o que roda no aparelho de quem avalia. Com um só, o que foi testado é o que executa. O que se perde é desempenho e bateria no Chrome do Android, onde o detector nativo é mais eficiente, e a perda é aceita conscientemente: a leitura de portaria é uma pessoa apontando o celular para um símbolo, não uma esteira.
+
+**Decodificação em trabalhador separado, a dez quadros por segundo, sobre quadro reduzido.** No processo principal a decodificação competiria com a renderização exatamente quando a fila anda, e o sintoma seria travar em uso e fluir parado. A cadência é dez por segundo porque quem segura um celular contra um ingresso não precisa de sessenta, e o quadro é reduzido a 480 pixels no lado maior porque decodificar em resolução cheia multiplica o custo sem melhorar a leitura de um símbolo que ocupa boa parte do enquadramento. O laço tem cão de guarda e trata erro do trabalhador, porque uma cadeia que só se reagenda na resposta morre em silêncio com a câmera ligada.
+
+**A contenção da leitura repetida existe pelo log e pelo operador, não pela integridade.** Com o símbolo parado no enquadramento o decodificador acerta em todo quadro. A integridade não corre risco: a escrita condicional garante que só a primeira leitura consome o ingresso. O que a rajada estragaria é a auditoria, enchendo o log de tentativas falsas, e a leitura do veredito, que piscaria na cara do operador. A contenção é uma requisição por vez, pausa da câmera enquanto há veredito na tela, e memória do último código com carência curta, descartada quando o operador declara que quer ler de novo.
+
+**Biblioteca que possui o laço de leitura possui a política de portaria.** Existem pacotes que entregam câmera, decodificação e laço prontos. Adotar um deles significaria terceirizar a decisão de quando disparar uma validação, que é regra de negócio desta portaria e não detalhe de decodificação. A biblioteca escolhida decodifica um quadro e nada mais; câmera, cadência, contenção e vereditos são do projeto. É a mesma fronteira usada na geração do símbolo.
+
 **Correspondência simples em vez de busca textual indexada.** Com este volume o otimizador ignoraria o índice, e o padrão de consulta é atendido pior por radicalização.
 
 ## 14. Limitações conhecidas

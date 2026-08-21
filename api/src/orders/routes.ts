@@ -63,6 +63,10 @@ ordersRouter.get("/:id", validateId, async (req, res) => {
   res.json(await service.getOwned(req.session!.sub, param(req, "id")));
 });
 
+ordersRouter.post("/:id/cancel", validateId, async (req, res) => {
+  res.json(await service.cancel(req.session!.sub, param(req, "id")));
+});
+
 ordersRouter.post(
   "/:id/payment",
   validateId,

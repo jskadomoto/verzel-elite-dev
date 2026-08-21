@@ -186,6 +186,31 @@ export async function findClaim(
   return rows[0] ? toClaim(rows[0]) : null;
 }
 
+export async function cancelOf(
+  orderId: string,
+  db: PoolClient,
+): Promise<TicketRecord[]> {
+  const { rows } = await db.query<TicketRow>(
+    `update tickets set status = 'CANCELLED', updated_at = now()
+     where order_id = $1 and status = 'VALID'
+     returning ${TICKET_COLUMNS}`,
+    [orderId],
+  );
+  return rows.map(toTicket);
+}
+
+export async function countUsedOf(
+  orderId: string,
+  db: Executor = pool,
+): Promise<number> {
+  const { rows } = await db.query<{ used: number }>(
+    `select count(*)::int as used from tickets
+     where order_id = $1 and status = 'USED'`,
+    [orderId],
+  );
+  return rows[0].used;
+}
+
 export async function revokeSharesOf(
   ticketId: string,
   db: PoolClient,

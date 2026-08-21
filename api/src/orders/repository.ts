@@ -133,6 +133,51 @@ export async function markPaid(
   return toOrder(rows[0]);
 }
 
+export async function markCancelled(
+  orderId: string,
+  db: PoolClient,
+): Promise<OrderRecord> {
+  const { rows } = await db.query<OrderRow>(
+    `update orders set status = 'CANCELLED', updated_at = now()
+     where id = $1
+     returning ${ORDER_COLUMNS}`,
+    [orderId],
+  );
+  return toOrder(rows[0]);
+}
+
+export async function releaseItems(
+  orderId: string,
+  db: PoolClient,
+): Promise<number> {
+  const { rows } = await db.query<{ released_units: number }>(
+    `with per_tier as materialized (
+       select tier_id, sum(quantity)::int as quantity
+       from order_items
+       where order_id = $1
+       group by tier_id
+     ),
+     locked_in_tier_order as materialized (
+       select tier.id, per_tier.quantity
+       from per_tier
+       join ticket_tiers tier on tier.id = per_tier.tier_id
+       order by tier.id
+       for update of tier
+     ),
+     released as (
+       update ticket_tiers tier
+       set allocated = tier.allocated - locked_in_tier_order.quantity,
+           updated_at = now()
+       from locked_in_tier_order
+       where tier.id = locked_in_tier_order.id
+       returning locked_in_tier_order.quantity
+     )
+     select coalesce(sum(quantity), 0)::int as released_units from released`,
+    [orderId],
+  );
+  return rows[0].released_units;
+}
+
 export async function insertItems(
   orderId: string,
   items: PricedItem[],

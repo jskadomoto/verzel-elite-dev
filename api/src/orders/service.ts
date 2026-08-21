@@ -9,6 +9,7 @@ import type {
   ExpirySweep,
   OrderDetail,
   OrderItemInput,
+  OrderStatus,
   PricedItem,
 } from "./types";
 
@@ -70,6 +71,59 @@ export async function getOwned(
   ]);
 
   return { ...order, items, tickets: issued };
+}
+
+const CANCELLABLE = new Set<OrderStatus>(["PENDING", "PAID"]);
+
+export async function cancel(
+  customerId: string,
+  orderId: string,
+): Promise<OrderDetail> {
+  return withTransaction(async (client) => {
+    const locked = await repository.findOwnedForUpdate(
+      orderId,
+      customerId,
+      client,
+    );
+    if (!locked) throw notFound("Pedido não encontrado.");
+
+    if (!CANCELLABLE.has(locked.order.status)) {
+      throw conflict(
+        "ORDER_NOT_CANCELLABLE",
+        "Este pedido não pode mais ser cancelado.",
+        { status: locked.order.status },
+      );
+    }
+
+    const event = await events.findById(locked.order.eventId, client);
+    if (event && Date.parse(event.startsAt) <= Date.now()) {
+      throw conflict(
+        "EVENT_ALREADY_STARTED",
+        "O evento já começou e o pedido não pode mais ser cancelado.",
+      );
+    }
+
+    const cancelled = await tickets.cancelOf(orderId, client);
+    const used = await tickets.countUsedOf(orderId, client);
+    if (used > 0) {
+      throw conflict(
+        "TICKET_ALREADY_USED",
+        used === 1
+          ? "Um ingresso deste pedido já foi utilizado na entrada."
+          : `${used} ingressos deste pedido já foram utilizados na entrada.`,
+        { used },
+      );
+    }
+
+    await repository.releaseItems(orderId, client);
+    const order = await repository.markCancelled(orderId, client);
+
+    return {
+      ...order,
+      items: await repository.findItems(orderId, client),
+      tickets: cancelled,
+    };
+  });
 }
 
 export async function create(

@@ -4,9 +4,6 @@ import type { Role } from "./roles";
 export type { Role };
 export type Session = { sub: string; role: Role; name: string };
 
-// Decodifica sem verificar assinatura.
-// Serve apenas para decidir o que renderizar e para onde redirecionar.
-// Autorização de verdade acontece no backend, a cada requisição, contra o token assinado.
 export function readSession(token: string | undefined): Session | null {
   if (!token) return null;
   try {

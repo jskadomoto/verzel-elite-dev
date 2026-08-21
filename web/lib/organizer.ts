@@ -70,9 +70,9 @@ export const STATUS_LABEL: Record<EventStatus, string> = {
 };
 
 export const STATUS_STYLE: Record<EventStatus, string> = {
-  DRAFT: "border-dashed",
-  PUBLISHED: "border-solid font-semibold",
-  CANCELLED: "border-solid line-through opacity-60",
+  DRAFT: "border-dashed border-line-strong bg-surface-raised text-muted",
+  PUBLISHED: "border-success/40 bg-success/15 text-success",
+  CANCELLED: "border-danger/50 bg-danger/15 text-danger line-through",
 };
 
 export const NOT_EDITABLE_REASON: Record<EventStatus, string> = {

@@ -23,12 +23,12 @@ export function OrganizerPagination({
         type="button"
         disabled={page <= 0}
         onClick={() => router.push(organizerHref(page - 1))}
-        className="min-h-11 rounded border px-4 text-base disabled:opacity-40"
+        className="btn-quiet"
       >
         Anterior
       </button>
 
-      <span className="text-sm">
+      <span className="text-sm text-muted">
         Página {page + 1} de {lastPage + 1}
       </span>
 
@@ -36,7 +36,7 @@ export function OrganizerPagination({
         type="button"
         disabled={page >= lastPage}
         onClick={() => router.push(organizerHref(page + 1))}
-        className="min-h-11 rounded border px-4 text-base disabled:opacity-40"
+        className="btn-quiet"
       >
         Próxima
       </button>

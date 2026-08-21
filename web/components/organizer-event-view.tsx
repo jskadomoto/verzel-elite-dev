@@ -13,13 +13,11 @@ export function OrganizerEventView({ event }: { event: OrganizerEvent }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {reason ? <p className="rounded border p-3">{reason}</p> : null}
+      {reason ? <p className="notice">{reason}</p> : null}
 
       <dl className="flex flex-col gap-2">
         <Line label="Situação">
-          <span
-            className={`inline-block rounded border px-2 py-0.5 ${STATUS_STYLE[event.status]}`}
-          >
+          <span className={`chip ${STATUS_STYLE[event.status]}`}>
             {STATUS_LABEL[event.status]}
           </span>
         </Line>
@@ -39,7 +37,7 @@ export function OrganizerEventView({ event }: { event: OrganizerEvent }) {
         <h2 className="text-lg font-semibold">Setores</h2>
 
         {event.tiers.length === 0 ? (
-          <p>Este evento não tem setores.</p>
+          <p className="notice">Este evento não tem setores.</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {event.tiers.map((tier) => (
@@ -59,12 +57,12 @@ function TierLine({ tier }: { tier: OrganizerTier }) {
 
   return (
     <div
-      className={`flex flex-col gap-1 rounded border p-3 sm:flex-row sm:items-baseline sm:justify-between ${
+      className={`flex flex-col gap-1 rounded-md border border-line bg-surface p-3 sm:flex-row sm:items-baseline sm:justify-between ${
         soldOut ? "opacity-60" : ""
       }`}
     >
       <span className="font-medium break-words">{tier.name}</span>
-      <span className="text-sm">
+      <span className="text-sm text-muted">
         {`${formatBrl(tier.priceCents)} · ${availabilityLabel(tier.available, tier.capacity)}`}
       </span>
     </div>
@@ -80,7 +78,7 @@ function Line({
 }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <dt className="text-sm opacity-70">{label}</dt>
+      <dt className="label">{label}</dt>
       <dd className="break-words whitespace-pre-line">{children}</dd>
     </div>
   );

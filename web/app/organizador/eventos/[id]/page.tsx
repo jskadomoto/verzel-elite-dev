@@ -10,6 +10,7 @@ import { messageFor } from "@/lib/errors";
 import {
   eventFormFromEvent,
   STATUS_LABEL,
+  STATUS_STYLE,
   type OrganizerEvent,
 } from "@/lib/organizer";
 
@@ -29,8 +30,8 @@ export default async function OrganizerEventPage({
 
     return (
       <AreaShell>
-        <div className="mt-4 flex flex-col items-start gap-4">
-          <p>{messageFor(result.code)}</p>
+        <div className="mt-5 flex flex-col items-start gap-4">
+          <p className="text-muted">{messageFor(result.code)}</p>
           <RetryButton />
         </div>
       </AreaShell>
@@ -41,17 +42,18 @@ export default async function OrganizerEventPage({
 
   return (
     <AreaShell>
-      <div className="mt-4 flex flex-col gap-6">
-        <Link
-          href="/organizador"
-          className="inline-flex min-h-11 items-center text-sm underline"
-        >
-          Voltar aos meus eventos
+      <div className="mt-5 flex flex-col gap-6">
+        <Link href="/organizador" className="back-link">
+          ← Meus eventos
         </Link>
 
-        <div className="flex flex-col gap-1">
-          <h2 className="text-lg font-semibold break-words">{event.title}</h2>
-          <p className="text-sm opacity-70">{STATUS_LABEL[event.status]}</p>
+        <div className="flex flex-col items-start gap-2">
+          <h2 className="text-xl font-semibold tracking-tight break-words">
+            {event.title}
+          </h2>
+          <span className={`chip ${STATUS_STYLE[event.status]}`}>
+            {STATUS_LABEL[event.status]}
+          </span>
         </div>
 
         <EventActions eventId={event.id} status={event.status} />

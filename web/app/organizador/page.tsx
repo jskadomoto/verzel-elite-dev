@@ -32,7 +32,7 @@ export default async function OrganizerPage({
 
   return (
     <AreaShell>
-      <div className="mt-4">
+      <div className="mt-5">
         <OrganizerEventList page={page} listing={listing} />
       </div>
     </AreaShell>

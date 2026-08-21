@@ -16,11 +16,6 @@ import {
   type TierFormValues,
 } from "@/lib/organizer";
 
-const fieldClass =
-  "min-h-11 w-full rounded border bg-background px-3 text-base text-foreground";
-
-const buttonClass = "min-h-11 rounded border px-4 text-base disabled:opacity-60";
-
 type Feedback = { kind: "erro" | "salvo"; message: string } | null;
 
 export function EventForm({
@@ -225,13 +220,13 @@ export function EventForm({
       />
 
       <label className="flex flex-col gap-1">
-        <span className="text-sm">Descrição</span>
+        <span className="label">Descrição</span>
         <textarea
           name="description"
           value={values.description}
           onChange={(event) => set({ description: event.target.value })}
           rows={4}
-          className="w-full rounded border bg-background px-3 py-2 text-base text-foreground"
+          className="field py-2"
         />
         <Problem message={problemOf("description")} />
       </label>
@@ -272,19 +267,15 @@ export function EventForm({
           />
         </div>
         <label className="flex flex-1 flex-col gap-1">
-          <span className="text-sm">Fuso horário</span>
+          <span className="label">Fuso horário</span>
           <select
             name="timezone"
             value={values.timezone}
             onChange={(event) => set({ timezone: event.target.value })}
-            className={fieldClass}
+            className="field"
           >
             {timezoneOptions(values.timezone).map((timezone) => (
-              <option
-                key={timezone}
-                value={timezone}
-                className="bg-background text-foreground"
-              >
+              <option key={timezone} value={timezone}>
                 {timezone}
               </option>
             ))}
@@ -342,8 +333,8 @@ export function EventForm({
         </div>
       </div>
 
-      <fieldset className="flex flex-col gap-3 rounded border p-3">
-        <legend className="px-1 text-sm">
+      <fieldset className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-3">
+        <legend className="label px-1">
           Setores ({values.tiers.length} de {MAX_TIERS})
         </legend>
 
@@ -365,19 +356,22 @@ export function EventForm({
           type="button"
           onClick={addTier}
           disabled={values.tiers.length >= MAX_TIERS}
-          className={buttonClass}
+          className="btn-quiet"
         >
           Adicionar setor
         </button>
       </fieldset>
 
       {feedback ? (
-        <p role="alert" className="text-sm">
+        <p
+          role="alert"
+          className={feedback.kind === "erro" ? "alert" : "notice"}
+        >
           {feedback.message}
         </p>
       ) : null}
 
-      <button type="submit" disabled={sending} className={buttonClass}>
+      <button type="submit" disabled={sending} className="btn-primary">
         {submitLabel(mode, sending)}
       </button>
     </form>
@@ -401,7 +395,9 @@ function TierFields({
 }) {
   return (
     <div
-      className={`flex flex-col gap-3 rounded border p-3 ${highlighted ? "border-2" : ""}`}
+      className={`flex flex-col gap-3 rounded-md border bg-surface-raised p-3 ${
+        highlighted ? "border-danger" : "border-line"
+      }`}
     >
       <Field
         label={`Nome do setor ${position + 1}`}
@@ -440,7 +436,7 @@ function TierFields({
         type="button"
         onClick={onRemove}
         disabled={!removable}
-        className={buttonClass}
+        className="btn-quiet"
       >
         Remover setor
       </button>
@@ -471,7 +467,7 @@ function Field({
 }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-sm">
+      <span className="label">
         {label}
         {required ? " *" : ""}
       </span>
@@ -483,7 +479,7 @@ function Field({
         placeholder={placeholder}
         aria-invalid={Boolean(problem)}
         onChange={(event) => onChange(event.target.value)}
-        className={fieldClass}
+        className="field"
       />
       <Problem message={problem} />
     </label>
@@ -492,7 +488,7 @@ function Field({
 
 function Problem({ message }: { message?: string }) {
   if (!message) return null;
-  return <span className="text-sm">{message}</span>;
+  return <span className="text-sm text-danger">{message}</span>;
 }
 
 function submitLabel(mode: "create" | "edit", sending: boolean) {

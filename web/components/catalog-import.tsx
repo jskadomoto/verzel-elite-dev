@@ -7,11 +7,6 @@ import { MIN_QUERY_LENGTH } from "@/lib/events";
 import { formatEventDateTime } from "@/lib/format";
 import type { CatalogItem, CatalogSearchResult } from "@/lib/organizer";
 
-const fieldClass =
-  "min-h-11 w-full rounded border bg-background px-3 text-base text-foreground";
-
-const buttonClass = "min-h-11 rounded border px-4 text-base disabled:opacity-60";
-
 export function CatalogImport({
   onImport,
 }: {
@@ -63,28 +58,30 @@ export function CatalogImport({
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="nome do show, do artista ou do local"
-          className={fieldClass}
+          className="field"
         />
-        <button type="submit" disabled={searching} className={buttonClass}>
+        <button type="submit" disabled={searching} className="btn-primary">
           {searching ? "Buscando…" : "Buscar"}
         </button>
       </form>
 
       {problem ? (
-        <p role="alert" className="text-sm">
+        <p role="alert" className="alert">
           {problem}
         </p>
       ) : null}
 
       {result?.degraded ? (
-        <p className="text-sm opacity-70">
+        <p className="notice">
           A fonte externa não respondeu, então estes resultados vêm de um
           conjunto local. Você ainda pode importar e ajustar tudo.
         </p>
       ) : null}
 
       {result && result.items.length === 0 ? (
-        <p>Nenhum item encontrado no catálogo externo para esse termo.</p>
+        <p className="notice">
+          Nenhum item encontrado no catálogo externo para esse termo.
+        </p>
       ) : null}
 
       {result && result.items.length > 0 ? (
@@ -92,15 +89,15 @@ export function CatalogImport({
           {result.items.map((item) => (
             <li
               key={item.externalId}
-              className="flex flex-col gap-2 rounded border p-3"
+              className="card flex flex-col gap-2"
             >
               <p className="font-medium break-words">{item.title}</p>
-              <p className="text-sm">{whenOf(item)}</p>
-              <p className="text-sm break-words">{placeOf(item)}</p>
+              <p className="text-sm text-brand">{whenOf(item)}</p>
+              <p className="text-sm break-words text-muted">{placeOf(item)}</p>
               <button
                 type="button"
                 onClick={() => onImport(item)}
-                className={buttonClass}
+                className="btn-quiet"
               >
                 Importar para o formulário
               </button>

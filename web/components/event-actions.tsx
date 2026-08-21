@@ -5,8 +5,6 @@ import { useState } from "react";
 import { codeOf, messageFor } from "@/lib/errors";
 import type { EventStatus } from "@/lib/organizer";
 
-const buttonClass = "min-h-11 rounded border px-4 text-base disabled:opacity-60";
-
 export function EventActions({
   eventId,
   status,
@@ -56,7 +54,7 @@ export function EventActions({
             type="button"
             disabled={running}
             onClick={() => run("publish")}
-            className={buttonClass}
+            className="btn-primary"
           >
             Publicar evento
           </button>
@@ -67,7 +65,7 @@ export function EventActions({
             type="button"
             disabled={running}
             onClick={() => setConfirmingCancel(true)}
-            className={buttonClass}
+            className="btn-danger"
           >
             Cancelar evento
           </button>
@@ -75,7 +73,7 @@ export function EventActions({
       </div>
 
       {confirmingCancel ? (
-        <div className="flex flex-col gap-2 rounded border p-3">
+        <div className="card flex flex-col gap-2 border-danger/40">
           <p>
             Cancelar tira o evento do catálogo público e não tem volta: um evento
             cancelado não pode ser editado nem publicado de novo.
@@ -85,7 +83,7 @@ export function EventActions({
               type="button"
               disabled={running}
               onClick={() => run("cancel")}
-              className={buttonClass}
+              className="btn-danger"
             >
               {running ? "Cancelando…" : "Confirmar cancelamento"}
             </button>
@@ -93,7 +91,7 @@ export function EventActions({
               type="button"
               disabled={running}
               onClick={() => setConfirmingCancel(false)}
-              className={buttonClass}
+              className="btn-quiet"
             >
               Voltar
             </button>
@@ -102,7 +100,7 @@ export function EventActions({
       ) : null}
 
       {problem ? (
-        <p role="alert" className="text-sm">
+        <p role="alert" className="alert">
           {problem}
         </p>
       ) : null}

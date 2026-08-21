@@ -7,6 +7,7 @@ import * as events from "../events/service";
 import type { EventWithTiers } from "../events/types";
 import * as gate from "../gate/service";
 import * as orders from "../orders/service";
+import type { OrderStatus } from "../orders/types";
 import * as payments from "../payments/service";
 import * as tickets from "../tickets/repository";
 import { codeFor, share } from "../tickets/service";
@@ -143,6 +144,63 @@ async function seedPaidTickets(
   return seededTicketsOf(event.id, buyerId);
 }
 
+const ordersOf = async (eventId: string, buyerId: string) =>
+  (await orders.listOwned(buyerId)).items.filter(
+    (order) => order.eventId === eventId,
+  );
+
+const createOrder = (
+  buyerId: string,
+  event: EventWithTiers,
+  tierIndex: number,
+  quantity: number,
+) =>
+  orders.create(buyerId, {
+    eventId: event.id,
+    items: [{ tierId: event.tiers[tierIndex].id, quantity }],
+    idempotencyKey: `seed-${randomUUID()}`,
+  });
+
+async function seedCancelledOrder(event: EventWithTiers, buyerId: string) {
+  const { order } = await createOrder(buyerId, event, 0, SEED_QUANTITY);
+  await payments.pay(buyerId, order.id, {
+    card: SEED_CARD,
+    idempotencyKey: `seed-${randomUUID()}`,
+  });
+  await orders.cancel(buyerId, order.id);
+}
+
+async function seedExpiredOrder(event: EventWithTiers, buyerId: string) {
+  const { order } = await createOrder(buyerId, event, 0, 1);
+  await pool.query(
+    "update orders set hold_expires_at = now() - make_interval(mins => 1) where id = $1",
+    [order.id],
+  );
+  await orders.expireOverdue();
+}
+
+async function seedOrderStates(
+  event: EventWithTiers,
+  buyerId: string,
+): Promise<OrderStatus[]> {
+  const existing = await ordersOf(event.id, buyerId);
+  const holds = (order: (typeof existing)[number]) =>
+    order.status === "PENDING" && Date.parse(order.holdExpiresAt) > Date.now();
+
+  if (!existing.some((order) => order.status === "CANCELLED")) {
+    await seedCancelledOrder(event, buyerId);
+  }
+  if (!existing.some((order) => order.status === "EXPIRED")) {
+    await seedExpiredOrder(event, buyerId);
+  }
+  if (!existing.some(holds)) {
+    await createOrder(buyerId, event, 1, 1);
+  }
+
+  const seeded = await ordersOf(event.id, buyerId);
+  return seeded.map((order) => order.status);
+}
+
 const asBrl = (priceCents: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
     priceCents / 100,
@@ -161,12 +219,20 @@ type Seeded = {
   issued: TicketRecord[];
   shared: TicketRecord;
   shareUrl: string;
+  orderStates: OrderStatus[];
 };
 
 const seatOf = (ticket: TicketRecord, event: EventWithTiers) =>
   `${event.tiers.find((tier) => tier.id === ticket.tierId)?.name ?? "?"} ${ticket.seatLabel}`;
 
-function printSummary({ users: seeded, event, issued, shared, shareUrl }: Seeded) {
+function printSummary({
+  users: seeded,
+  event,
+  issued,
+  shared,
+  shareUrl,
+  orderStates,
+}: Seeded) {
   console.log("\nUsuários semeados, senha única:", PASSWORD, "\n");
   for (const user of seeded) {
     console.log(`${user.role.padEnd(10)} ${user.email}`);
@@ -202,6 +268,11 @@ function printSummary({ users: seeded, event, issued, shared, shareUrl }: Seeded
       ? `  ${codeFor(forGate.id)}   (${seatOf(forGate, event)})`
       : "  nenhum ingresso semeado continua válido; todos já foram validados",
   );
+
+  console.log(`\nPedidos de ${BUYER_EMAIL}:\n`);
+  for (const status of orderStates) {
+    console.log(`  ${status}`);
+  }
 
   console.log("\nLink de compartilhamento:\n");
   console.log(`  ${shareUrl}   (${seatOf(shared, event)})`);
@@ -251,6 +322,7 @@ async function main() {
     throw new Error(`Nenhum ingresso emitido para ${BUYER_EMAIL}.`);
   }
 
+  const orderStates = await seedOrderStates(event, buyer.id);
   const { token } = await share(shared.id, buyer.id);
 
   printSummary({
@@ -258,6 +330,7 @@ async function main() {
     event,
     issued,
     shared,
+    orderStates,
     shareUrl: `${publicUrl()}${SHARE_PATH}/${token}`,
   });
 }

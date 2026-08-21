@@ -11,9 +11,6 @@ import {
 
 const TYPING_PAUSE_MS = 400;
 
-const fieldClass =
-  "min-h-11 w-full rounded border bg-background px-3 text-base text-foreground";
-
 export function CatalogFilterForm({
   filters,
   cities,
@@ -56,24 +53,24 @@ export function CatalogFilterForm({
 
   return (
     <form
-      className="flex flex-col gap-3"
+      className="card flex flex-col gap-3"
       onSubmit={(event) => {
         event.preventDefault();
         if (!invertedPeriod) apply(draft);
       }}
     >
       <label className="flex flex-col gap-1">
-        <span className="text-sm">Buscar por nome do evento ou do local</span>
+        <span className="label">Buscar por nome do evento ou do local</span>
         <input
           type="search"
           name="q"
           value={draft.q}
           onChange={(event) => setDraft({ ...draft, q: event.target.value })}
           placeholder="festival, arena…"
-          className={fieldClass}
+          className="field"
         />
         {queryTooShort ? (
-          <span className="text-sm opacity-70">
+          <span className="text-sm text-faint">
             Digite ao menos {MIN_QUERY_LENGTH} letras para buscar.
           </span>
         ) : null}
@@ -81,22 +78,16 @@ export function CatalogFilterForm({
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <label className="flex flex-1 flex-col gap-1">
-          <span className="text-sm">Cidade</span>
+          <span className="label">Cidade</span>
           <select
             name="city"
             value={draft.city}
             onChange={(event) => change({ city: event.target.value })}
-            className={fieldClass}
+            className="field"
           >
-            <option value="" className="bg-background text-foreground">
-              Todas as cidades
-            </option>
+            <option value="">Todas as cidades</option>
             {cities.map((city) => (
-              <option
-                key={city}
-                value={city}
-                className="bg-background text-foreground"
-              >
+              <option key={city} value={city}>
                 {city}
               </option>
             ))}
@@ -104,7 +95,7 @@ export function CatalogFilterForm({
         </label>
 
         <label className="flex flex-1 flex-col gap-1">
-          <span className="text-sm">Categoria</span>
+          <span className="label">Categoria</span>
           <input
             type="text"
             name="category"
@@ -114,26 +105,26 @@ export function CatalogFilterForm({
             }
             onBlur={() => change({ category: draft.category })}
             placeholder="musica, teatro…"
-            className={fieldClass}
+            className="field"
           />
         </label>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <label className="flex flex-1 flex-col gap-1">
-          <span className="text-sm">A partir de</span>
+          <span className="label">A partir de</span>
           <input
             type="date"
             name="from"
             value={draft.from}
             max={draft.to || undefined}
             onChange={(event) => change({ from: event.target.value })}
-            className={fieldClass}
+            className="field"
           />
         </label>
 
         <label className="flex flex-1 flex-col gap-1">
-          <span className="text-sm">Até</span>
+          <span className="label">Até</span>
           <input
             type="date"
             name="to"
@@ -141,13 +132,13 @@ export function CatalogFilterForm({
             min={draft.from || undefined}
             onChange={(event) => change({ to: event.target.value })}
             aria-invalid={invertedPeriod}
-            className={fieldClass}
+            className="field"
           />
         </label>
       </div>
 
       {invertedPeriod ? (
-        <p role="alert" className="text-sm">
+        <p role="alert" className="alert">
           O fim do período não pode ser anterior ao início. Enquanto isso, a lista
           abaixo continua com o filtro anterior.
         </p>
@@ -157,14 +148,14 @@ export function CatalogFilterForm({
         <button
           type="submit"
           disabled={invertedPeriod}
-          className="min-h-11 rounded border px-4 text-base disabled:opacity-60"
+          className="btn-primary"
         >
           Aplicar filtros
         </button>
         <button
           type="button"
           onClick={() => router.push("/")}
-          className="min-h-11 rounded border px-4 text-base"
+          className="btn-quiet"
         >
           Limpar filtros
         </button>

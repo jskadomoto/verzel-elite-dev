@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { BrandMark } from "@/components/brand-mark";
 import { CatalogFilterForm } from "@/components/catalog-filter-form";
 import { CatalogResults } from "@/components/catalog-results";
 import { read } from "@/lib/api";
@@ -42,15 +43,25 @@ export default async function CatalogPage({
 
   return (
     <div className="flex min-h-full flex-col">
-      <header className="flex items-center justify-between gap-3 border-b px-4 py-3">
-        <p className="font-semibold">Ingressos</p>
-        <Link href="/login" className="inline-flex min-h-11 items-center rounded border px-4">
-          Entrar
-        </Link>
+      <header className="border-b border-line">
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-3">
+          <BrandMark />
+          <Link href="/login" className="btn-quiet">
+            Entrar
+          </Link>
+        </div>
       </header>
 
-      <main className="flex flex-1 flex-col gap-6 px-4 py-6">
-        <h1 className="text-xl font-semibold">Eventos</h1>
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-8">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-semibold tracking-tight">
+            Os próximos eventos
+          </h1>
+          <p className="text-muted">
+            Escolha o setor, reserve por dez minutos e receba o ingresso com
+            código de entrada no celular.
+          </p>
+        </div>
 
         <CatalogFilterForm
           filters={filters}
@@ -60,7 +71,7 @@ export default async function CatalogPage({
         {listing ? (
           <CatalogResults filters={filters} listing={listing} />
         ) : (
-          <p>
+          <p className="notice">
             Ajuste o período para ver os eventos: o fim não pode ser anterior ao
             início.
           </p>

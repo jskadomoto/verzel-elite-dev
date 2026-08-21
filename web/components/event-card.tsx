@@ -8,17 +8,29 @@ export function EventCard({ event }: { event: PublicEventSummary }) {
   return (
     <Link
       href={`/eventos/${event.id}`}
-      className="flex min-h-11 flex-col gap-1 rounded border p-4"
+      className="group flex w-full min-h-11 flex-col gap-2 rounded-lg border border-line bg-surface p-4 transition-colors hover:border-brand"
     >
-      <h2 className="text-lg font-semibold break-words">{event.title}</h2>
-      <p className="text-sm">
+      <p className="text-sm font-medium text-brand">
         {formatEventDateTime(event.startsAt, event.timezone)}
       </p>
-      <p className="text-sm break-words">{`${event.venueName} · ${place}`}</p>
-      <p className="mt-1 text-sm">
-        {event.priceFromCents === null
-          ? "Ingressos ainda não disponíveis"
-          : `A partir de ${formatBrl(event.priceFromCents)}`}
+
+      <h2 className="text-lg font-semibold tracking-tight break-words group-hover:text-brand">
+        {event.title}
+      </h2>
+
+      <p className="text-sm break-words text-muted">{`${event.venueName} · ${place}`}</p>
+
+      <p className="mt-auto pt-2 text-sm">
+        {event.priceFromCents === null ? (
+          <span className="text-faint">Ingressos ainda não disponíveis</span>
+        ) : (
+          <>
+            <span className="text-faint">A partir de </span>
+            <span className="font-semibold">
+              {formatBrl(event.priceFromCents)}
+            </span>
+          </>
+        )}
       </p>
     </Link>
   );

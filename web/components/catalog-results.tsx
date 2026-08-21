@@ -20,7 +20,7 @@ export function CatalogResults({
   if (!listing.ok) {
     return (
       <div className="flex flex-col items-start gap-4">
-        <p>{messageFor(listing.code)}</p>
+        <p className="text-muted">{messageFor(listing.code)}</p>
         <RetryButton />
       </div>
     );
@@ -34,7 +34,7 @@ export function CatalogResults({
 
   return (
     <>
-      <p className="text-sm opacity-70">
+      <p className="text-sm text-faint">
         {total} {total === 1 ? "evento" : "eventos"}
       </p>
 
@@ -53,16 +53,20 @@ export function CatalogResults({
 
 function EmptyCatalog({ filtered }: { filtered: boolean }) {
   if (!filtered) {
-    return <p>Nenhum evento publicado no momento. Volte em instantes.</p>;
+    return (
+      <p className="notice">
+        Nenhum evento publicado no momento. Volte em instantes.
+      </p>
+    );
   }
 
   return (
-    <div className="flex flex-col items-start gap-4">
+    <div className="card flex flex-col items-start gap-4">
       <p>
         Nenhum evento encontrado com esses filtros. Tente outro termo, outra
         cidade ou um período maior.
       </p>
-      <Link href="/" className="inline-flex min-h-11 items-center rounded border px-4">
+      <Link href="/" className="btn-quiet">
         Limpar filtros
       </Link>
     </div>

@@ -18,21 +18,26 @@ const tierSchema = z.object({
 const tiersSchema = z.array(tierSchema).min(1).max(6);
 
 const eventFieldsSchema = z.object({
-  title: z.string().max(200).optional(),
-  description: z.string().max(4000).nullable().optional(),
-  category: z.string().max(60).optional(),
+  title: z.string().trim().min(1).max(200).optional(),
+  description: z.string().trim().max(4000).nullable().optional(),
+  category: z.string().trim().min(1).max(60).optional(),
   imageUrl: z.url().nullable().optional(),
-  startsAt: z.iso.datetime({ offset: true }).optional(),
-  timezone: z.string().max(60).optional(),
-  venueName: z.string().max(200).optional(),
-  address: z.string().max(300).nullable().optional(),
-  city: z.string().max(120).optional(),
-  state: z.string().max(40).nullable().optional(),
-  country: z.string().length(2).optional(),
+  startsAt: z.iso
+    .datetime({ offset: true })
+    .refine((value) => value >= "1900-01-01", {
+      message: "Data de início anterior ao mínimo aceito.",
+    })
+    .optional(),
+  timezone: z.string().trim().min(1).max(60).optional(),
+  venueName: z.string().trim().min(1).max(200).optional(),
+  address: z.string().trim().max(300).nullable().optional(),
+  city: z.string().trim().min(1).max(120).optional(),
+  state: z.string().trim().max(40).nullable().optional(),
+  country: z.string().trim().length(2).optional(),
 });
 
 const createSchema = eventFieldsSchema.extend({
-  externalId: z.string().max(120).optional(),
+  externalId: z.string().trim().min(1).max(120).optional(),
   tiers: tiersSchema.optional(),
 });
 

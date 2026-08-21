@@ -44,6 +44,11 @@ export type OrderRecord = {
 
 export type OrderWithItems = OrderRecord & { items: OrderItem[] };
 
+export type LockedOrder = {
+  order: OrderRecord;
+  holdExpired: boolean;
+};
+
 export type CreatedOrder = {
   order: OrderWithItems;
   created: boolean;

@@ -2,6 +2,7 @@ import type { Pool, PoolClient } from "pg";
 import { pool } from "../db/pool";
 import type {
   ExpirySweep,
+  LockedOrder,
   NewOrder,
   OrderItem,
   OrderRecord,
@@ -88,6 +89,48 @@ export async function findByKey(
     [storedKey(customerId, idempotencyKey)],
   );
   return rows[0] ? toOrder(rows[0]) : null;
+}
+
+export async function findOwnedForUpdate(
+  orderId: string,
+  customerId: string,
+  db: PoolClient,
+): Promise<LockedOrder | null> {
+  const { rows } = await db.query<OrderRow & { hold_expired: boolean }>(
+    `select ${ORDER_COLUMNS}, hold_expires_at <= now() as hold_expired
+     from orders
+     where id = $1 and customer_id = $2
+     for update`,
+    [orderId, customerId],
+  );
+  if (!rows[0]) return null;
+  return { order: toOrder(rows[0]), holdExpired: rows[0].hold_expired };
+}
+
+export async function findOwned(
+  orderId: string,
+  customerId: string,
+  db: Executor = pool,
+): Promise<OrderRecord | null> {
+  const { rows } = await db.query<OrderRow>(
+    `select ${ORDER_COLUMNS} from orders
+     where id = $1 and customer_id = $2`,
+    [orderId, customerId],
+  );
+  return rows[0] ? toOrder(rows[0]) : null;
+}
+
+export async function markPaid(
+  orderId: string,
+  db: PoolClient,
+): Promise<OrderRecord> {
+  const { rows } = await db.query<OrderRow>(
+    `update orders set status = 'PAID', paid_at = now(), updated_at = now()
+     where id = $1
+     returning ${ORDER_COLUMNS}`,
+    [orderId],
+  );
+  return toOrder(rows[0]);
 }
 
 export async function insertItems(

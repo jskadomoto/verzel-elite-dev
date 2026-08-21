@@ -1,7 +1,9 @@
 import { Router } from "express";
 import z from "zod";
 import { requireAuth, requireRole } from "../auth/middleware";
-import { validateBody } from "../http/validate";
+import { param, validateBody, validateParam } from "../http/validate";
+import * as payments from "../payments/service";
+import type { PayOrderInput } from "../payments/types";
 import * as service from "./service";
 import type { CreateOrderInput } from "./types";
 
@@ -23,8 +25,51 @@ const createSchema = z.object({
   idempotencyKey: z.string().trim().min(8).max(120),
 });
 
+const cardSchema = z.object({
+  number: z
+    .string()
+    .trim()
+    .max(25)
+    .regex(/^[0-9 ]+$/)
+    .refine((value) => {
+      const digits = value.replace(/\D/g, "");
+      return digits.length >= 13 && digits.length <= 19;
+    }),
+  holder: z.string().trim().min(2).max(80),
+  expiry: z
+    .string()
+    .trim()
+    .regex(/^(0[1-9]|1[0-2])\/\d{2}$/),
+  cvc: z
+    .string()
+    .trim()
+    .regex(/^\d{3,4}$/),
+});
+
+const paySchema = z.object({
+  card: cardSchema,
+  idempotencyKey: z.string().trim().min(8).max(120),
+});
+
+const validateId = validateParam("id", z.uuid(), "Pedido não encontrado.");
+
 ordersRouter.post("/", validateBody(createSchema), async (req, res) => {
   const input = req.valid as CreateOrderInput;
   const { order, created } = await service.create(req.session!.sub, input);
   res.status(created ? 201 : 200).json(order);
 });
+
+ordersRouter.post(
+  "/:id/payment",
+  validateId,
+  validateBody(paySchema),
+  async (req, res) => {
+    const input = req.valid as PayOrderInput;
+    const { created, ...result } = await payments.pay(
+      req.session!.sub,
+      param(req, "id"),
+      input,
+    );
+    res.status(created ? 201 : 200).json(result);
+  },
+);

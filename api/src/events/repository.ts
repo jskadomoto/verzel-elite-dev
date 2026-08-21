@@ -244,6 +244,21 @@ export async function allocate(
   return rows[0]?.price_cents ?? null;
 }
 
+export async function takeSeatNumbers(
+  tierId: string,
+  quantity: number,
+  db: PoolClient,
+): Promise<number> {
+  const { rows } = await db.query<{ issued_seq: number }>(
+    `update ticket_tiers
+     set issued_seq = issued_seq + $2, updated_at = now()
+     where id = $1
+     returning issued_seq`,
+    [tierId, quantity],
+  );
+  return rows[0].issued_seq;
+}
+
 export async function findOwned(
   id: string,
   organizerId: string,

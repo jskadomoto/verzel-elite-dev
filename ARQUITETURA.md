@@ -402,3 +402,5 @@ Não existe transferência de titularidade, apenas compartilhamento de acesso.
 O contador de ocupação é uma linha quente por setor: sob concorrência real e sustentada em um mesmo evento, ele se torna ponto de serialização, e a evolução natural seria particionar o estoque em faixas.
 
 Não há reemissão de código de ingresso, o que significa que uma captura de tela do QR permanece apresentável enquanto o ingresso não for consumido.
+
+A idempotência do seed depende do título do evento. Como `events` não tem chave natural, o seed reconhece o que já semeou procurando pelo título entre os eventos do organizador de demonstração, e renomear esse evento pela tela do organizador faz a execução seguinte criar um segundo. O seed também reagenda o evento quando a data se aproxima demais: em rascunho ele apenas move a data, e publicado ele cancela e cria outro no lugar, porque só rascunho aceita edição. O resíduo desse reparo são eventos cancelados acumulados no painel do organizador, invisíveis no catálogo público.

@@ -20,9 +20,9 @@ export default async function ConfirmationPage({
     if (result.status === 401) redirect("/login");
 
     return (
-      <main className="flex min-h-full flex-col items-start gap-4 px-4 py-6">
+      <main className="mx-auto flex min-h-full w-full max-w-lg flex-col items-start gap-4 px-4 py-6">
         <h1 className="text-xl font-semibold">Confirmação indisponível</h1>
-        <p>{messageFor(result.code)}</p>
+        <p className="text-muted">{messageFor(result.code)}</p>
         <RetryButton />
       </main>
     );
@@ -33,15 +33,19 @@ export default async function ConfirmationPage({
   if (order.status !== "PAID") redirect(checkoutHref(order.id));
 
   return (
-    <main className="flex min-h-full flex-col gap-4 px-4 py-6">
+    <main className="mx-auto flex min-h-full w-full max-w-lg flex-col gap-4 px-4 py-6">
       <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold">Pagamento aprovado</h1>
-        <p>Seus ingressos foram emitidos.</p>
+        <span className="chip self-start border-success/40 bg-success/15 text-success">
+          Pagamento aprovado
+        </span>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Seus ingressos foram emitidos
+        </h1>
       </header>
 
       <OrderSummary order={order} event={event} />
 
-      <section className="flex flex-col gap-3 rounded border p-4">
+      <section className="card flex flex-col gap-3">
         <h2 className="text-lg font-semibold">
           {order.tickets.length === 1
             ? "Seu ingresso"
@@ -52,30 +56,28 @@ export default async function ConfirmationPage({
           {order.tickets.map((ticket) => (
             <li
               key={ticket.id}
-              className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 rounded border p-3"
+              className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 rounded-md border border-line bg-surface-raised px-3 py-2"
             >
               <span className="break-words">
                 {tierNameOf(event, ticket.tierId)}
               </span>
-              <span className="font-mono whitespace-nowrap">
+              <span className="font-mono whitespace-nowrap text-muted">
                 lugar {ticket.seatLabel}
               </span>
             </li>
           ))}
         </ul>
+
+        <Link href="/minha-conta" className="btn-primary">
+          Ver meus ingressos
+        </Link>
       </section>
 
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Link
-          href={eventHref(order.eventId)}
-          className="inline-flex min-h-11 items-center justify-center rounded border px-4 text-base"
-        >
+        <Link href={eventHref(order.eventId)} className="btn-quiet">
           Voltar ao evento
         </Link>
-        <Link
-          href="/"
-          className="inline-flex min-h-11 items-center justify-center rounded border px-4 text-base"
-        >
+        <Link href="/" className="btn-quiet">
           Ver outros eventos
         </Link>
       </div>

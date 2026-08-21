@@ -18,9 +18,6 @@ const EMPTY_CARD = { number: "", holder: "", expiry: "", cvc: "" };
 
 type CardField = keyof typeof EMPTY_CARD;
 
-const fieldClass =
-  "bg-background text-foreground min-h-11 rounded border px-3 text-base";
-
 function blockedBy(code: string | undefined, payload: unknown): CheckoutBlock {
   if (code === "HOLD_EXPIRED") return "EXPIRED";
 
@@ -129,11 +126,11 @@ export function CheckoutPayment({
       {state ? (
         <CheckoutBlocked block={state} orderId={orderId} eventId={eventId} />
       ) : (
-        <div className="flex items-baseline justify-between gap-3 rounded border p-4">
-          <span>Reserva válida por</span>
+        <div className="card flex items-baseline justify-between gap-3 border-brand/40 bg-brand/10">
+          <span className="text-muted">Reserva válida por</span>
           <span
             suppressHydrationWarning
-            className="font-mono text-xl font-semibold tabular-nums"
+            className="font-mono text-2xl font-semibold tabular-nums text-brand"
           >
             {formatRemaining(remaining)}
           </span>
@@ -144,9 +141,9 @@ export function CheckoutPayment({
 
       {state ? null : (
         <>
-          <section className="flex flex-col gap-2 rounded border p-4">
+          <section className="card flex flex-col gap-2">
             <h2 className="font-medium">Cartões de teste</h2>
-            <p className="text-sm opacity-70">
+            <p className="text-sm text-muted">
               Toque em um deles para preencher o formulário.
             </p>
             <ul className="flex flex-col gap-2">
@@ -156,10 +153,10 @@ export function CheckoutPayment({
                     type="button"
                     disabled={paying}
                     onClick={() => fillWith(testCard.number)}
-                    className="flex min-h-11 w-full flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded border px-3 py-2 text-left text-sm disabled:opacity-60"
+                    className="flex min-h-11 w-full flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-md border border-line bg-surface-raised px-3 py-2 text-left text-sm hover:border-brand disabled:opacity-55"
                   >
                     <span className="font-mono">{testCard.number}</span>
-                    <span className="opacity-70">{testCard.outcome}</span>
+                    <span className="text-muted">{testCard.outcome}</span>
                   </button>
                 </li>
               ))}
@@ -168,7 +165,7 @@ export function CheckoutPayment({
 
           <form onSubmit={pay} className="flex flex-col gap-3">
             <label className="flex flex-col gap-1" htmlFor="card-number">
-              <span className="text-sm">Número do cartão</span>
+              <span className="label">Número do cartão</span>
               <input
                 id="card-number"
                 inputMode="numeric"
@@ -177,12 +174,12 @@ export function CheckoutPayment({
                 value={card.number}
                 disabled={paying}
                 onChange={(event) => change("number", event.target.value)}
-                className={fieldClass}
+                className="field"
               />
             </label>
 
             <label className="flex flex-col gap-1" htmlFor="card-holder">
-              <span className="text-sm">Nome impresso no cartão</span>
+              <span className="label">Nome impresso no cartão</span>
               <input
                 id="card-holder"
                 autoComplete="cc-name"
@@ -190,7 +187,7 @@ export function CheckoutPayment({
                 value={card.holder}
                 disabled={paying}
                 onChange={(event) => change("holder", event.target.value)}
-                className={fieldClass}
+                className="field"
               />
             </label>
 
@@ -199,7 +196,7 @@ export function CheckoutPayment({
                 className="flex flex-1 flex-col gap-1"
                 htmlFor="card-expiry"
               >
-                <span className="text-sm">Validade</span>
+                <span className="label">Validade</span>
                 <input
                   id="card-expiry"
                   inputMode="numeric"
@@ -209,12 +206,12 @@ export function CheckoutPayment({
                   value={card.expiry}
                   disabled={paying}
                   onChange={(event) => change("expiry", event.target.value)}
-                  className={fieldClass}
+                  className="field"
                 />
               </label>
 
               <label className="flex flex-1 flex-col gap-1" htmlFor="card-cvc">
-                <span className="text-sm">Código</span>
+                <span className="label">Código</span>
                 <input
                   id="card-cvc"
                   inputMode="numeric"
@@ -223,7 +220,7 @@ export function CheckoutPayment({
                   value={card.cvc}
                   disabled={paying}
                   onChange={(event) => change("cvc", event.target.value)}
-                  className={fieldClass}
+                  className="field"
                 />
               </label>
             </div>
@@ -231,7 +228,7 @@ export function CheckoutPayment({
             <button
               type="submit"
               disabled={paying || incomplete}
-              className="min-h-11 rounded border px-4 text-base disabled:opacity-60"
+              className="btn-primary"
             >
               {paying ? "Pagando…" : "Pagar"}
             </button>
@@ -240,7 +237,7 @@ export function CheckoutPayment({
       )}
 
       {problem ? (
-        <p role="alert" className="rounded border p-3 text-sm">
+        <p role="alert" className="alert">
           {problem}
         </p>
       ) : null}

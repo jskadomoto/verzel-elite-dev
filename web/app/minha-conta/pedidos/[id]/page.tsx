@@ -22,9 +22,9 @@ export default async function CheckoutPage({
     if (result.status === 401) redirect("/login");
 
     return (
-      <main className="flex min-h-full flex-col items-start gap-4 px-4 py-6">
+      <main className="mx-auto flex min-h-full w-full max-w-lg flex-col items-start gap-4 px-4 py-6">
         <h1 className="text-xl font-semibold">Pagamento indisponível</h1>
-        <p>{messageFor(result.code)}</p>
+        <p className="text-muted">{messageFor(result.code)}</p>
         <RetryButton />
       </main>
     );
@@ -36,15 +36,12 @@ export default async function CheckoutPage({
   if (block === "PAID") redirect(confirmationHref(order.id));
 
   return (
-    <main className="flex min-h-full flex-col gap-4 px-4 py-6">
-      <Link
-        href={eventHref(order.eventId)}
-        className="inline-flex min-h-11 items-center text-sm underline"
-      >
-        Voltar ao evento
+    <main className="mx-auto flex min-h-full w-full max-w-lg flex-col gap-4 px-4 py-6">
+      <Link href={eventHref(order.eventId)} className="back-link">
+        ← Voltar ao evento
       </Link>
 
-      <h1 className="text-2xl font-semibold">Pagamento</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Pagamento</h1>
 
       {block ? (
         <>

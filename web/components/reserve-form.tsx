@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { AvailabilityBar } from "@/components/availability-bar";
 import {
   checkoutHref,
   chosenTiers,
@@ -88,38 +89,37 @@ export function ReserveForm({
           return (
             <li
               key={tier.id}
-              className={`flex flex-col gap-2 rounded border p-4 ${
-                soldOut ? "opacity-60" : ""
-              }`}
+              className={`card flex flex-col gap-2 ${soldOut ? "opacity-60" : ""}`}
             >
               <div className="flex items-baseline justify-between gap-3">
                 <p className="font-medium break-words">{tier.name}</p>
-                <p className="whitespace-nowrap">
+                <p className="text-lg font-semibold whitespace-nowrap text-brand">
                   {formatBrl(tier.priceCents)}
                 </p>
               </div>
 
-              <p className="text-sm">
+              <AvailabilityBar
+                available={tier.available}
+                capacity={tier.capacity}
+              />
+
+              <p className="text-sm text-muted">
                 {availabilityLabel(tier.available, tier.capacity)}
               </p>
 
               {soldOut ? null : (
                 <label className="flex min-h-11 items-center justify-between gap-3">
-                  <span className="text-sm">Quantidade</span>
+                  <span className="label">Quantidade</span>
                   <select
                     value={chosen[tier.id] ?? 0}
                     disabled={reserving}
                     onChange={(event) =>
                       choose(tier.id, Number(event.target.value))
                     }
-                    className="bg-background text-foreground min-h-11 rounded border px-3 text-base"
+                    className="field w-auto"
                   >
                     {quantitiesFor(tier.available).map((quantity) => (
-                      <option
-                        key={quantity}
-                        value={quantity}
-                        className="bg-background text-foreground"
-                      >
+                      <option key={quantity} value={quantity}>
                         {quantity}
                       </option>
                     ))}
@@ -131,14 +131,14 @@ export function ReserveForm({
         })}
       </ul>
 
-      <div className="flex flex-col gap-3 rounded border p-4">
+      <div className="card flex flex-col gap-3">
         <div className="flex items-baseline justify-between gap-3">
-          <p>
+          <p className="text-muted">
             {seats === 0
               ? "Nenhum ingresso selecionado"
               : `${seats} ${seats === 1 ? "ingresso" : "ingressos"}`}
           </p>
-          <p className="text-lg font-semibold whitespace-nowrap">
+          <p className="text-xl font-semibold whitespace-nowrap">
             {formatBrl(total)}
           </p>
         </div>
@@ -147,17 +147,17 @@ export function ReserveForm({
           type="button"
           disabled={reserving || seats === 0}
           onClick={reserve}
-          className="min-h-11 rounded border px-4 text-base disabled:opacity-60"
+          className="btn-primary"
         >
           {reserving ? "Reservando…" : "Reservar"}
         </button>
 
-        <p className="text-sm opacity-70">
+        <p className="text-sm text-faint">
           A reserva segura os ingressos por dez minutos para você pagar.
         </p>
 
         {problem ? (
-          <p role="alert" className="text-sm">
+          <p role="alert" className="alert">
             {problem}
           </p>
         ) : null}

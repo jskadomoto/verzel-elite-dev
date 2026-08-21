@@ -7,17 +7,17 @@ export function OrderSummary({
   event,
 }: Readonly<Pick<Checkout, "order" | "event">>) {
   return (
-    <section className="flex flex-col gap-3 rounded border p-4">
+    <section className="card flex flex-col gap-3">
       <h2 className="text-lg font-semibold break-words">
         {event ? event.title : "Pedido"}
       </h2>
 
       {event ? (
-        <p className="text-sm">
+        <p className="text-sm text-brand">
           {formatEventDateTimeLong(event.startsAt, event.timezone)}
         </p>
       ) : (
-        <p className="text-sm">
+        <p className="text-sm text-muted">
           Este evento saiu do catálogo público desde que você reservou.
         </p>
       )}
@@ -38,9 +38,9 @@ export function OrderSummary({
         ))}
       </ul>
 
-      <div className="flex items-baseline justify-between gap-3 border-t pt-3">
-        <span>Total</span>
-        <span className="text-lg font-semibold whitespace-nowrap">
+      <div className="flex items-baseline justify-between gap-3 border-t border-line pt-3">
+        <span className="text-muted">Total</span>
+        <span className="text-xl font-semibold whitespace-nowrap">
           {formatBrl(order.totalCents)}
         </span>
       </div>

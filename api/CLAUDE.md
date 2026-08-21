@@ -63,9 +63,9 @@ Detalhes que já custaram bug e não devem ser reintroduzidos:
 
 Transição é comando, não atualização de recurso. Rotas de ação (`POST /organizer/events/:id/publish`, `POST /organizer/events/:id/cancel`, `POST /gate/validate`), nunca `PUT` com o status no corpo.
 
-A transição para `CANCELLED` de pedido e de ingresso existe no modelo e no banco, e não tem caminho pela API: nenhuma rota a produz, e `POST /orders/:id/cancel` não está implementada. Cancelamento com devolução ao estoque é opcional declarado da fase 6 em `../ROADMAP.md`. Cancelamento de evento, esse sim, tem rota.
+`POST /orders/:id/cancel` leva pedido e ingressos a `CANCELLED` e devolve a ocupação ao setor, tudo na mesma transação, com a linha do pedido travada antes de decidir. Exige três precondições: pedido em `PENDING` ou `PAID`, nenhum ingresso em `USED`, evento ainda não começou. Quem cancela é o dono do pedido; cancelar o evento é outra transição, do organizador, e não desfaz pedidos.
 
-Quando o cancelamento de pedido for implementado, exigirá três precondições: pedido em `PENDING` ou `PAID`, nenhum ingresso em `USED`, evento ainda não começou.
+A precondição do ingresso usado é decidida pela escrita: os ingressos são cancelados com `status = 'VALID'` na cláusula `where` e a contagem de usados vem depois, dentro da mesma transação, desfazendo tudo se houver algum.
 
 ## QR e portaria
 

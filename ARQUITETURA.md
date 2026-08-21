@@ -150,11 +150,11 @@ A escolha de colocar essas garantias no banco não é estilística. As três pri
 
 ## 6. Ciclos de vida
 
-**Pedido.** Nasce pendente com prazo de dez minutos, ocupando estoque. Segue para pago quando uma autorização é aprovada, ou para expirado quando o prazo vence sem aprovação. Autorização recusada não altera o estado: a reserva continua viva e o cliente pode tentar outro cartão sem perder o lugar.
+**Pedido.** Nasce pendente com prazo de dez minutos, ocupando estoque. Segue para pago quando uma autorização é aprovada, para expirado quando o prazo vence sem aprovação, ou para cancelado por ação do dono sobre um pedido pendente ou pago. Autorização recusada não altera o estado: a reserva continua viva e o cliente pode tentar outro cartão sem perder o lugar.
 
-**Ingresso.** Nasce válido junto com a aprovação do pagamento. Segue para usado na primeira validação bem sucedida. Não retorna de usado.
+**Ingresso.** Nasce válido junto com a aprovação do pagamento. Segue para usado na primeira validação bem sucedida, ou para cancelado junto com o cancelamento do pedido. Não retorna de usado, e é por isso que um pedido com ingresso já utilizado não pode ser cancelado.
 
-O estado cancelado de pedido e de ingresso existe no modelo e no banco, e hoje não tem caminho pela API: nenhuma rota o produz, e o cancelamento com devolução ao estoque é opcional declarado da fase 6 no `ROADMAP.md`. A consequência prática é que a transição para cancelado descrita adiante é desenho previsto, e não comportamento em vigor. A portaria já tem veredito próprio para ingresso cancelado, e ele só se alcança escrevendo o estado direto no banco.
+O cancelamento é a única transição que devolve ocupação ao estoque, e por isso é a única em que a escrita do pedido, a dos ingressos e a do setor precisam acontecer na mesma transação. Quem cancela é o dono do pedido, nunca o organizador: cancelar o evento é outra transição, com outra rota, e não desfaz pedidos.
 
 **Evento.** Nasce rascunho, torna-se publicado por ação do organizador, pode ser cancelado. Apenas eventos publicados aparecem na listagem pública e aceitam compra.
 
@@ -171,8 +171,8 @@ Transições são comandos, expostos como rotas de ação, e não como atualiza�
 | Ingresso de outro evento                     | Comparação com o evento da sessão de portaria produz veredito específico, sem consumir o ingresso     |
 | Ingresso de pedido cancelado                 | Veredito próprio, distinto de inválido                                                                |
 | Assinatura adulterada ou de outra chave      | Recusado antes de qualquer consulta ao banco                                                          |
-| Cancelamento de pedido com ingresso já usado | Precondição do cancelamento previsto, que também impede violar a restrição de coerência               |
-| Cancelamento após o início do evento         | Precondição do cancelamento previsto, que ainda não tem rota                                          |
+| Cancelamento de pedido com ingresso já usado | Recusado, o que também impede violar a restrição de coerência                                         |
+| Cancelamento após o início do evento         | Recusado                                                                                              |
 
 ## 7. Fluxos críticos
 
@@ -223,7 +223,9 @@ A varredura seleciona pedidos vencidos com `for update skip locked`, agrega as q
 
 ### Cancelamento
 
-Ainda não implementado, e descrito aqui como desenho previsto. Opera com sinal invertido em relação à reserva, devolvendo ocupação e marcando os ingressos como cancelados. Exige que o pedido esteja pendente ou pago, que nenhum ingresso dele tenha sido usado, e que o evento ainda não tenha começado. A segunda precondição é também o que impede violar a restrição de coerência entre estado e hora de uso.
+Opera com sinal invertido em relação à reserva, devolvendo ocupação e marcando os ingressos como cancelados. Exige que o pedido esteja pendente ou pago, que nenhum ingresso dele tenha sido usado, e que o evento ainda não tenha começado. A segunda precondição é também o que impede violar a restrição de coerência entre estado e hora de uso.
+
+A linha do pedido é travada antes de qualquer decisão, como no pagamento, e as três escritas seguem na mesma transação: os ingressos válidos viram cancelados, os setores recebem de volta a quantidade dos itens, travados em ordem de id, e o pedido vira cancelado. A precondição do ingresso usado não é uma leitura anterior à escrita: os ingressos são cancelados com a condição `status = 'VALID'` embutida, e só depois se conta quantos ficaram usados. Se houver algum, a transação inteira é desfeita. Uma validação de portaria simultânea ou vence a corrida, e o cancelamento é recusado sem ter mudado nada, ou espera a trava e encontra o ingresso já cancelado, respondendo o veredito de cancelado.
 
 ### Validação
 
@@ -321,7 +323,7 @@ Na criação do evento, o item completo é preservado em `external_snapshot`, os
 | POST   | `/orders`                          | cliente     | reserva estoque                                             |
 | GET    | `/orders/:id`                      | dono        | estado, itens e, quando pago, os ingressos emitidos         |
 | POST   | `/orders/:id/payment`              | dono        | autoriza e emite                                            |
-| POST   | `/orders/:id/cancel`               | dono        | **não implementada**, prevista para a fase 6                |
+| POST   | `/orders/:id/cancel`               | dono        | cancela, devolve estoque e invalida os ingressos            |
 | GET    | `/me/tickets`                      | cliente     | ingressos do usuário                                        |
 | GET    | `/tickets/:id`                     | dono        | ingresso com payload do código e estado do link ativo       |
 | POST   | `/tickets/:id/share`               | dono        | gera link                                                   |

@@ -231,7 +231,15 @@ A cadeia de verificação vai do mais barato ao mais caro e interrompe no primei
 
 Apenas a reivindicação escreve. A decisão não é tomada pela leitura anterior, mas pela própria escrita condicional: se ela não afeta linha nenhuma, o ingresso já havia sido consumido, e nenhuma ordem de chegada, latência de rede ou concorrência entre dois leitores altera esse resultado.
 
-Toda tentativa é registrada, inclusive as que falham, o que alimenta a lista de leituras recentes exibida na tela de portaria.
+Toda tentativa é registrada, inclusive as que falham, o que alimenta a lista de leituras recentes exibida na tela de portaria. O prefixo guardado é o payload sem o último segmento, e fica vazio quando a leitura não tem os três segmentos: sem estrutura reconhecível não há segmento de assinatura a separar, e gravar a entrada crua arriscaria justamente o que a regra evita. A operadora que apresentou o código continua registrada, então uma sequência de leituras ilegíveis num mesmo portão permanece visível na auditoria.
+
+Estar atribuído ao evento é condição de entrada, e não um veredito: a portaria que não trabalha aquele evento recebe recurso não encontrado, como o organizador recebe para evento alheio, e a tentativa não entra no log daquele evento. O contrário permitiria a quem não foi atribuído escrever linhas na auditoria de qualquer evento.
+
+Os dados do ingresso só voltam quando ele pertence ao evento em validação. O veredito de evento errado responde sem lugar nem setor, porque a operadora não precisa deles para recusar a entrada, e informá-los exporia dados de um evento em cuja portaria ela não trabalha.
+
+### Compartilhamento
+
+Gerar e revogar link travam a linha do ingresso antes de decidir, como a reserva serializa na linha do setor e o pagamento na linha do pedido: sem esse ponto comum, uma revogação concorrente a uma geração não enxerga a linha que a outra transação acabou de inserir e deixa vivo um link que o dono considera substituído.
 
 ## 8. Segurança
 
@@ -273,6 +281,12 @@ Três propriedades do desenho merecem explicação.
 
 O link é uma credencial secundária, com token aleatório de trinta e dois bytes armazenado como hash, com expiração, revogação e contagem de aberturas. Gerar um novo link revoga o anterior.
 
+O token em claro existe uma única vez, na resposta da geração. Nenhuma leitura posterior o devolve, nem a do dono nem qualquer outra, e isso não é uma regra de contrato que alguém possa relaxar depois: o banco guarda só o hash, então não há de onde recuperá-lo. Quem perdeu o link gera outro, e a geração revoga o anterior, que é a consequência correta de tratar o token como credencial e não como identificador.
+
+A leitura do ingresso pelo dono devolve o estado do link ativo, quando existe: prazo de validade, número de aberturas e instante da última. É o que a tela precisa para escolher entre oferecer geração e oferecer revogação, sem uma segunda chamada e sem gerar um link só para descobrir que já havia um, o que revogaria justamente o que estava em uso. Ativo aqui significa não revogado e dentro do prazo, exatamente a condição que a abertura pública verifica, para que a tela do dono nunca anuncie um link que o portador já não consegue abrir.
+
+O link aponta para `/ingresso/<token>` no front, rota pública que consome `GET /share/:token`. É o endereço que o seed imprime, montado com `WEB_URL`, e por isso a rota do front está fixada aqui e não só no código da página.
+
 A propriedade que o desenho assume explicitamente é que o link entrega o ingresso: quem o possui pode apresentá-lo, e se duas pessoas o fizerem, a primeira leitura vence. Essa consequência é comunicada na interface, não apenas na documentação, e a revogação existe justamente para dar controle sobre ela.
 
 ## 9. Integração com o catálogo externo
@@ -309,11 +323,11 @@ Na criação do evento, o item completo é preservado em `external_snapshot`, os
 | POST   | `/orders/:id/payment`              | dono        | autoriza e emite                                            |
 | POST   | `/orders/:id/cancel`               | dono        | **não implementada**, prevista para a fase 6                |
 | GET    | `/me/tickets`                      | cliente     | ingressos do usuário                                        |
-| GET    | `/tickets/:id`                     | dono        | ingresso com payload do código                              |
+| GET    | `/tickets/:id`                     | dono        | ingresso com payload do código e estado do link ativo       |
 | POST   | `/tickets/:id/share`               | dono        | gera link                                                   |
 | DELETE | `/tickets/:id/share`               | dono        | revoga link                                                 |
 | GET    | `/share/:token`                    | público     | ingresso compartilhado                                      |
-| GET    | `/gate/events`                     | portaria    | eventos atribuídos                                          |
+| GET    | `/gate/events`                     | portaria    | eventos atribuídos, com o status, sem filtrar               |
 | POST   | `/gate/validate`                   | portaria    | valida ingresso no evento informado                         |
 | GET    | `/gate/log`                        | portaria    | tentativas recentes                                         |
 | GET    | `/health`                          | público     | estado do serviço                                           |
@@ -323,6 +337,10 @@ Erros seguem um envelope único, com código estável em maiúsculas que a inter
 `PAYMENT_DECLINED` responde 402, e não 409 como os demais códigos de negócio, com o motivo da recusa em `details`. Recusa de cartão não é conflito de estado: o pedido continua exatamente como estava, válido e pagável, e a ação correta do cliente é tentar outro cartão, não recarregar para descobrir o que mudou. A interface precisa separar esse caso de `ORDER_NOT_PENDING` e `HOLD_EXPIRED`, que dizem o oposto, que o pedido deixou de aceitar pagamento.
 
 Os vereditos de portaria não trafegam como erro. Já utilizado, evento errado e cancelado são respostas corretas de um sistema funcionando, retornadas com status de sucesso e um campo de veredito. Tratá-los como falha de requisição obrigaria a interface a derivar semântica de negócio de códigos de transporte.
+
+A lista de eventos da portaria devolve uma projeção própria, com os campos que a tela usa mais o status, e não a projeção do catálogo público: são contratos independentes, e mudar o que o público enxerga não deve alterar em silêncio o que a portaria recebe. Ela não filtra por status, de propósito. Recusar trabalho sobre evento cancelado é decisão da tela, que tem o status em mãos e pode dizer o que houve; filtrar na leitura apagaria a diferença entre evento cancelado e ausência de atribuição, e essas duas situações pedem respostas opostas do operador. A validação não se apoia nessa lista: ela impõe suas próprias regras sobre o evento informado no corpo da requisição.
+
+A atribuição de portaria cria conta nova ou aponta conta existente, e o corpo declara qual das duas: com nome e senha, cria; apenas com o e-mail, atribui. Nenhum ramo ignora campo enviado, porque aceitar uma senha e descartá-la faria o organizador comunicar à equipe uma credencial que não vale. Nenhum ramo altera senha ou papel de conta que já existe: sobrescrever a senha permitiria a um organizador assumir a conta de um porteiro que também trabalha para outro, e converter o papel destruiria a conta de cliente de quem usa o mesmo endereço. A atribuição em si é idempotente pela chave primária de `gate_assignments`, de modo que repetir a chamada não é erro.
 
 A busca de eventos usa correspondência simples sobre título e nome do local, restrita aos publicados, combinada com filtros de cidade e período. O volume envolvido não justifica índice invertido, e o padrão de consulta predominante é nome próprio digitado parcialmente, que busca textual com radicalização atende pior que correspondência direta.
 
@@ -342,15 +360,16 @@ O endpoint de saúde expõe o instante de início do processo, o que permite dis
 
 **Variáveis de ambiente.** Toda leitura de `process.env` acontece em `src/env.ts`, e a ausência de uma obrigatória derruba o processo no boot em vez de circular como `undefined`.
 
-| Variável                | Obrigatória | Para quê                                                       |
-| ----------------------- | ----------- | -------------------------------------------------------------- |
-| `DATABASE_URL`          | sim         | conexão com o Postgres                                          |
-| `SESSION_SECRET`        | sim         | assinatura do token de sessão                                   |
-| `TICKET_SECRET`         | sim         | assinatura do código do ingresso                                |
-| `PORT`                  | não         | porta de escuta, com padrão 8080                                |
-| `NODE_ENV`              | não         | decide o modo TLS da conexão, com padrão de desenvolvimento     |
-| `TICKETMASTER_API_KEY`  | não         | catálogo externo; ausente, o provedor local assume              |
-| `API_URL`               | sim, no BFF | endereço da API para os route handlers do Next, nunca público   |
+| Variável                | Obrigatória | Para quê                                                            |
+| ----------------------- | ----------- | --------------------------------------------------------------      |
+| `DATABASE_URL`          | sim         | conexão com o Postgres                                              |
+| `SESSION_SECRET`        | sim         | assinatura do token de sessão                                       |
+| `TICKET_SECRET`         | sim         | assinatura do código do ingresso                                    |
+| `PORT`                  | não         | porta de escuta, com padrão 8080                                    |
+| `NODE_ENV`              | não         | decide o modo TLS da conexão, com padrão de desenvolvimento         |
+| `TICKETMASTER_API_KEY`  | não         | catálogo externo; ausente, o provedor local assume                  |
+| `WEB_URL`               | não         | monta o link que o seed imprime, com padrão localhost na porta 3000 |
+| `API_URL`               | sim, no BFF | endereço da API para os route handlers do Next, nunca público       |
 
 `SESSION_SECRET` e `TICKET_SECRET` são distintas de propósito. Vazamento da chave de sessão permitiria forjar sessão, e vazamento da chave de ingresso permitiria forjar código; separá-las mantém cada consequência contida ao seu domínio, e permite trocar uma sem invalidar a outra.
 
@@ -428,5 +447,9 @@ O contador de ocupação é uma linha quente por setor: sob concorrência real e
 Não há reemissão de código de ingresso, o que significa que uma captura de tela do QR permanece apresentável enquanto o ingresso não for consumido.
 
 Os dados que o ingresso exibe são lidos do evento, e não copiados no momento da emissão. Isso é correto hoje porque evento publicado não aceita edição e não volta a rascunho: a condição `status = 'DRAFT'` está na cláusula `where` da própria atualização, a emissão exige pedido pago, e pedido exige evento publicado. Os dois estados não se reencontram, então não existe janela entre emitir e editar. A dependência é entre decisões, e não uma pendência: quem um dia permitir editar evento publicado precisa antes copiar título, data, fuso, local e nome do setor para o ingresso, sob pena de o comprovante passar a mostrar algo diferente do que foi vendido.
+
+Não existe caminho na API para criar conta de organizador: o cadastro público fixa papel de cliente e não há painel administrativo. Organizadores nascem do seed. É privilégio mínimo, e não omissão, porque qualquer rota que criasse organizador seria a rota que promove a si mesmo. A consequência prática é que testar posse entre organizadores distintos exige criar a segunda conta fora da API.
+
+Atribuir portaria informando apenas o e-mail responde de forma distinta conforme a conta exista ou não, e isso permite a um organizador descobrir se um endereço está cadastrado, testando um por vez. Responder igual nos dois casos eliminaria a distinção, mas deixaria sem resposta quem tentou atribuir uma conta que existe e não entendeu por que falhou. A troca é aceitável porque quem chama é usuário autenticado com papel de organizador, e não um anônimo: sondar exige manter uma conta identificada, e o que se descobre é a existência do endereço, sem nome, papel ou qualquer outro dado da conta.
 
 A idempotência do seed depende do título do evento. Como `events` não tem chave natural, o seed reconhece o que já semeou procurando pelo título entre os eventos do organizador de demonstração, e renomear esse evento pela tela do organizador faz a execução seguinte criar um segundo. O seed também reagenda o evento quando a data se aproxima demais: em rascunho ele apenas move a data, e publicado ele cancela e cria outro no lugar, porque só rascunho aceita edição. O resíduo desse reparo são eventos cancelados acumulados no painel do organizador, invisíveis no catálogo público.

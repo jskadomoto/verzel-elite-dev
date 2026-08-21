@@ -201,9 +201,11 @@ Nenhuma linha de ingresso é tocada nesta etapa.
 
 Também em transação única, e a ordem das operações é significativa.
 
-A tentativa é inserida em `payments` primeiro, tratando conflito de chave como leitura da tentativa anterior. Consultar antes de inserir reintroduziria exatamente a corrida que a idempotência existe para eliminar: duas requisições simultâneas não enxergam uma à outra na consulta, ambas prosseguem, e a segunda falha com erro de restrição em vez de devolver o resultado da primeira.
+A ordem é travar a linha do pedido, validar que ele é pagável, autorizar, e só então gravar a tentativa em `payments`. Travar antes da releitura de estado e prazo é o que faz uma rotina de expiração em curso ser esperada: o lock segura, e a releitura observa o pedido já expirado, em vez de autorizar um pagamento sobre estoque devolvido. Validar antes de escrever é o que impede que uma tentativa contra pedido inexistente, alheio ou vencido chegue a escrever linha alguma.
 
-A linha do pedido é travada antes da releitura de estado e prazo. Se a rotina de expiração estiver em curso, o lock faz esperar e a releitura observa o pedido já expirado, em vez de autorizar um pagamento sobre estoque devolvido.
+A gravação da tentativa continua sendo inserção com tratamento de conflito, nunca consulta seguida de decisão de inserir. Consultar para decidir reintroduziria exatamente a corrida que a idempotência existe para eliminar: duas requisições simultâneas não enxergam uma à outra na consulta, ambas prosseguem, e a segunda falha com erro de restrição em vez de devolver o resultado da primeira. Com a validação antes, a serialização de duas requisições da mesma chave passa a acontecer no lock da linha do pedido, e a unicidade da chave permanece como árbitro final.
+
+Há uma consulta pela chave no caminho em que o pedido não é pagável, e ela não contradiz a regra acima. Sem ela, uma repetição legítima chegando depois que a primeira já marcou o pedido como pago receberia recusa por estado em vez do resultado que ela mesma produziu. Essa consulta roda com o lock da linha do pedido já adquirido, de modo que nenhuma tentativa concorrente daquele pedido está em curso, e ela não decide se escreve: decide o que responder num caminho onde já foi decidido não escrever.
 
 A autorização simulada é determinística e derivada do número do cartão: falha de dígito verificador produz número inválido, uma pequena lista de números conhecidos produz motivos distintos de recusa, e qualquer outro número válido aprova. Determinismo aqui não é detalhe de implementação, é requisito de verificabilidade: o caminho da recusa precisa ser reproduzível por quem avalia.
 
@@ -301,7 +303,7 @@ Na criação do evento, o item completo é preservado em `external_snapshot`, os
 | GET    | `/events/cities`                   | público     | cidades distintas dos eventos publicados, para o seletor    |
 | GET    | `/events/:id`                      | público     | detalhe com setores e disponibilidade                       |
 | POST   | `/orders`                          | cliente     | reserva estoque                                             |
-| GET    | `/orders/:id`                      | dono        | estado e itens                                              |
+| GET    | `/orders/:id`                      | dono        | estado, itens e, quando pago, os ingressos emitidos         |
 | POST   | `/orders/:id/payment`              | dono        | autoriza e emite                                            |
 | POST   | `/orders/:id/cancel`               | dono        | cancela e devolve estoque                                   |
 | GET    | `/me/tickets`                      | cliente     | ingressos do usuário                                        |
@@ -315,6 +317,8 @@ Na criação do evento, o item completo é preservado em `external_snapshot`, os
 | GET    | `/health`                          | público     | estado do serviço                                           |
 
 Erros seguem um envelope único, com código estável em maiúsculas que a interface usa para escolher a mensagem, mais uma descrição legível e um objeto de detalhes.
+
+`PAYMENT_DECLINED` responde 402, e não 409 como os demais códigos de negócio, com o motivo da recusa em `details`. Recusa de cartão não é conflito de estado: o pedido continua exatamente como estava, válido e pagável, e a ação correta do cliente é tentar outro cartão, não recarregar para descobrir o que mudou. A interface precisa separar esse caso de `ORDER_NOT_PENDING` e `HOLD_EXPIRED`, que dizem o oposto, que o pedido deixou de aceitar pagamento.
 
 Os vereditos de portaria não trafegam como erro. Já utilizado, evento errado e cancelado são respostas corretas de um sistema funcionando, retornadas com status de sucesso e um campo de veredito. Tratá-los como falha de requisição obrigaria a interface a derivar semântica de negócio de códigos de transporte.
 
@@ -333,6 +337,20 @@ A ordenação dessa lista é feita por `unaccent` do valor, e não pela collatio
 O endpoint de saúde expõe o instante de início do processo, o que permite distinguir, sem acesso a logs, uma instância estável de uma que acabou de subir.
 
 **Rotina de migração.** Executa no início do processo, antes da abertura da porta, porque o plano de hospedagem não oferece fase de release separada.
+
+**Variáveis de ambiente.** Toda leitura de `process.env` acontece em `src/env.ts`, e a ausência de uma obrigatória derruba o processo no boot em vez de circular como `undefined`.
+
+| Variável                | Obrigatória | Para quê                                                       |
+| ----------------------- | ----------- | -------------------------------------------------------------- |
+| `DATABASE_URL`          | sim         | conexão com o Postgres                                          |
+| `SESSION_SECRET`        | sim         | assinatura do token de sessão                                   |
+| `TICKET_SECRET`         | sim         | assinatura do código do ingresso                                |
+| `PORT`                  | não         | porta de escuta, com padrão 8080                                |
+| `NODE_ENV`              | não         | decide o modo TLS da conexão, com padrão de desenvolvimento     |
+| `TICKETMASTER_API_KEY`  | não         | catálogo externo; ausente, o provedor local assume              |
+| `API_URL`               | sim, no BFF | endereço da API para os route handlers do Next, nunca público   |
+
+`SESSION_SECRET` e `TICKET_SECRET` são distintas de propósito. Vazamento da chave de sessão permitiria forjar sessão, e vazamento da chave de ingresso permitiria forjar código; separá-las mantém cada consequência contida ao seu domínio, e permite trocar uma sem invalidar a outra.
 
 **Fuso horário.** Instantes são armazenados com fuso, e o evento carrega o fuso do local. A conversão entre horário de parede informado pelo organizador e instante armazenado acontece em um único ponto do servidor, porque é a fonte mais comum de erro silencioso neste domínio.
 
@@ -357,13 +375,17 @@ A cobertura é deliberadamente estreita e concentrada nos comportamentos que sus
 
 Concorrência de venda: um setor com dez lugares submetido a trinta compras simultâneas resulta em exatamente dez aprovações, vinte recusas por esgotamento, ocupação em dez e dez ingressos persistidos.
 
+O pool de conexões limita as transações simultâneas a dez, e isso muda o que esse teste demonstra. As trinta requisições chegam juntas na camada HTTP, mas o banco enxerga no máximo dez transações ativas, com as demais enfileiradas no lock da linha do setor até o lote drenar. Medição durante uma execução, amostrando `pg_stat_activity`: dez ativas e nove esperando lock, no pico.
+
+O número não foi inflado para o teste. O mesmo limite de pool vale na instância publicada, então o que o teste exercita é a disputa que existe em produção, e não um cenário construído para parecer mais severo. Elevar o limite apenas durante o teste produziria um resultado sobre uma configuração que não existe em lugar nenhum.
+
 Validação dupla: o mesmo código submetido duas vezes em paralelo produz uma aprovação e um já utilizado, com a hora de uso preenchida uma única vez.
 
 Código forjado: assinatura alterada e assinatura produzida com outra chave são rejeitadas antes da consulta.
 
 Autorização: papel incorreto é recusado, recurso de outro organizador responde como inexistente, e ingresso de evento diferente do selecionado produz o veredito específico.
 
-Os testes sobem a aplicação sem abrir porta, o que é o motivo de a montagem do Express estar separada da abertura do servidor.
+Os testes sobem a própria aplicação em porta efêmera de loopback, sorteada pelo sistema, o que é o motivo de a montagem do Express estar separada da abertura do servidor. Nenhum teste depende do servidor de desenvolvimento estar de pé nem ocupa a porta configurada, e a requisição atravessa rota, validação, serviço e repositório como qualquer outra.
 
 ## 13. Decisões e alternativas descartadas
 
@@ -402,5 +424,7 @@ Não existe transferência de titularidade, apenas compartilhamento de acesso.
 O contador de ocupação é uma linha quente por setor: sob concorrência real e sustentada em um mesmo evento, ele se torna ponto de serialização, e a evolução natural seria particionar o estoque em faixas.
 
 Não há reemissão de código de ingresso, o que significa que uma captura de tela do QR permanece apresentável enquanto o ingresso não for consumido.
+
+Os dados que o ingresso exibe são lidos do evento, e não copiados no momento da emissão. Isso é correto hoje porque evento publicado não aceita edição e não volta a rascunho: a condição `status = 'DRAFT'` está na cláusula `where` da própria atualização, a emissão exige pedido pago, e pedido exige evento publicado. Os dois estados não se reencontram, então não existe janela entre emitir e editar. A dependência é entre decisões, e não uma pendência: quem um dia permitir editar evento publicado precisa antes copiar título, data, fuso, local e nome do setor para o ingresso, sob pena de o comprovante passar a mostrar algo diferente do que foi vendido.
 
 A idempotência do seed depende do título do evento. Como `events` não tem chave natural, o seed reconhece o que já semeou procurando pelo título entre os eventos do organizador de demonstração, e renomear esse evento pela tela do organizador faz a execução seguinte criar um segundo. O seed também reagenda o evento quando a data se aproxima demais: em rascunho ele apenas move a data, e publicado ele cancela e cria outro no lugar, porque só rascunho aceita edição. O resíduo desse reparo são eventos cancelados acumulados no painel do organizador, invisíveis no catálogo público.

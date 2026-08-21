@@ -20,6 +20,12 @@ const MESSAGES: Record<string, string> = {
   EVENT_NOT_PUBLISHED: "Este evento não está mais aberto para compra.",
   TIER_NOT_IN_EVENT: "Setor inválido para este evento. Recarregue a página.",
   ORDER_NOT_PENDING: "Este pedido não está mais aguardando pagamento.",
+  ORDER_NOT_CANCELLABLE:
+    "Este pedido não pode mais ser cancelado. Recarregue a página para ver o estado atual.",
+  TICKET_ALREADY_USED:
+    "Um ingresso deste pedido já foi utilizado na entrada, então o pedido não pode ser cancelado.",
+  EVENT_ALREADY_STARTED:
+    "O evento já começou, e o cancelamento só vale antes do início.",
   HOLD_EXPIRED: "A reserva expirou e os ingressos voltaram para a venda.",
   PAYMENT_DECLINED: "Pagamento recusado. Tente outro cartão.",
   UPSTREAM_UNAVAILABLE:

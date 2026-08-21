@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { CancelOrder } from "@/components/cancel-order";
 import { OrderSummary } from "@/components/order-summary";
 import { RetryButton } from "@/components/retry-button";
 import { checkoutHref, eventHref } from "@/lib/checkout";
@@ -79,6 +80,8 @@ export default async function ConfirmationPage({
           Ver outros eventos
         </Link>
       </div>
+
+      <CancelOrder orderId={order.id} />
     </main>
   );
 }

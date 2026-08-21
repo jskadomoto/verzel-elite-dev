@@ -30,7 +30,7 @@ export default async function OrganizerEventPage({
 
     return (
       <AreaShell>
-        <div className="mt-5 flex flex-col items-start gap-4">
+        <div className="mt-8 flex flex-col items-start gap-5">
           <p className="text-muted">{messageFor(result.code)}</p>
           <RetryButton />
         </div>
@@ -42,7 +42,7 @@ export default async function OrganizerEventPage({
 
   return (
     <AreaShell>
-      <div className="mt-5 flex flex-col gap-6">
+      <div className="mt-8 flex flex-col gap-8">
         <Link href="/organizador" className="back-link">
           ← Meus eventos
         </Link>

@@ -20,7 +20,7 @@ export function OrganizerEventList({
 }) {
   if (!listing.ok) {
     return (
-      <div className="flex flex-col items-start gap-4">
+      <div className="flex flex-col items-start gap-5">
         <p className="text-muted">{messageFor(listing.code)}</p>
         <RetryButton />
       </div>
@@ -30,7 +30,7 @@ export function OrganizerEventList({
   const { items, pageSize, total } = listing.data;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-faint">
           {total} {total === 1 ? "evento" : "eventos"}
@@ -41,7 +41,7 @@ export function OrganizerEventList({
       </div>
 
       {items.length === 0 ? (
-        <div className="card flex flex-col items-start gap-4">
+        <div className="card flex flex-col items-start gap-3">
           <p>
             Você ainda não tem eventos. Comece importando um do catálogo externo
             ou criando do zero.
@@ -87,7 +87,7 @@ function OrganizerEventRow({ event }: { event: OrganizerEvent }) {
       <p className="font-semibold break-words group-hover:text-brand">
         {event.title}
       </p>
-      <p className="text-sm text-brand">
+      <p className="text-sm font-medium text-gold">
         {formatEventDateTime(event.startsAt, event.timezone)}
       </p>
       <p className="text-sm break-words text-muted">{place}</p>

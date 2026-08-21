@@ -8,7 +8,7 @@ export const maxDuration = 60;
 export default function NewOrganizerEventPage() {
   return (
     <AreaShell>
-      <div className="mt-5 flex flex-col gap-6">
+      <div className="mt-8 flex flex-col gap-8">
         <Link href="/organizador" className="back-link">
           ← Meus eventos
         </Link>

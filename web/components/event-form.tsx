@@ -209,7 +209,7 @@ export function EventForm({
     invalid[field]?.length ? "Confira este campo." : undefined;
 
   return (
-    <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
+    <form className="flex flex-col gap-3" onSubmit={submit} noValidate>
       <Field
         label="Título"
         name="title"
@@ -231,7 +231,7 @@ export function EventForm({
         <Problem message={problemOf("description")} />
       </label>
 
-      <div className="flex flex-col gap-4 sm:flex-row">
+      <div className="flex flex-col gap-3 sm:flex-row">
         <div className="flex-1">
           <Field
             label="Categoria"
@@ -254,7 +254,7 @@ export function EventForm({
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row">
+      <div className="flex flex-col gap-3 sm:flex-row">
         <div className="flex-1">
           <Field
             label="Data e hora"
@@ -301,7 +301,7 @@ export function EventForm({
         problem={problemOf("address")}
       />
 
-      <div className="flex flex-col gap-4 sm:flex-row">
+      <div className="flex flex-col gap-3 sm:flex-row">
         <div className="flex-1">
           <Field
             label="Cidade"

@@ -92,7 +92,7 @@ export function CatalogImport({
               className="card flex flex-col gap-2"
             >
               <p className="font-medium break-words">{item.title}</p>
-              <p className="text-sm text-brand">{whenOf(item)}</p>
+              <p className="text-sm font-medium text-gold">{whenOf(item)}</p>
               <p className="text-sm break-words text-muted">{placeOf(item)}</p>
               <button
                 type="button"

@@ -12,7 +12,7 @@ export function OrganizerEventView({ event }: { event: OrganizerEvent }) {
   const reason = NOT_EDITABLE_REASON[event.status];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       {reason ? <p className="notice">{reason}</p> : null}
 
       <dl className="flex flex-col gap-2">
@@ -77,7 +77,7 @@ function Line({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-1">
       <dt className="label">{label}</dt>
       <dd className="break-words whitespace-pre-line">{children}</dd>
     </div>

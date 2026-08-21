@@ -7,29 +7,16 @@ import type { CreateEventInput, UpdateEventInput } from "./types";
 
 export const eventsRouter = Router();
 
-// Papel aplicado no router, não rota a rota: toda rota daqui é do organizador,
-// e repetir o guarda em cada uma é o jeito de esquecer numa delas.
 eventsRouter.use(requireAuth, requireRole("ORGANIZER"));
 
-// Aqui só formato e tamanho. Nome repetido, nome vazio depois de aparado e
-// preço não negativo são regra e ficam em prepareTiers: duplicar faria as duas
-// mensagens divergirem com o tempo.
-// O preço é inteiro de centavos, nunca decimal. O teto equivale a R$ 100.000
-// por ingresso, acima do qual o valor é erro de digitação e não preço.
 const tierSchema = z.object({
   name: z.string().min(1).max(60),
   priceCents: z.number().int().max(10_000_000),
   capacity: z.number().int().min(1).max(200_000),
 });
 
-// O limite de setores existe para o tamanho da transação: cada um vira uma
-// linha no mesmo insert da criação do evento.
 const tiersSchema = z.array(tierSchema).min(1).max(6);
 
-// Os anuláveis são `.nullable().optional()` de propósito: o serviço distingue
-// ausente, que cede ao item importado, de nulo explícito, que apaga o campo.
-// `startsAt` exige deslocamento de fuso, porque instante sem fuso é horário de
-// parede disfarçado e é a fonte silenciosa de erro deste domínio.
 const eventFieldsSchema = z.object({
   title: z.string().max(200).optional(),
   description: z.string().max(4000).nullable().optional(),
@@ -53,9 +40,6 @@ const updateSchema = eventFieldsSchema.extend({
   tiers: tiersSchema.optional(),
 });
 
-// Id fora do formato responde 404, o mesmo veredito de um uuid válido que não
-// existe e de um evento alheio: nenhum id que o organizador não pode acessar
-// se distingue dos outros.
 const validateId = validateParam("id", z.uuid(), "Evento não encontrado.");
 
 eventsRouter.post("/", validateBody(createSchema), async (req, res) => {

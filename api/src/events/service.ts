@@ -16,14 +16,6 @@ import {
   type UpdateEventInput,
 } from "./types";
 
-// A linha do evento é o ponto de serialização das operações do organizador.
-// Criação à parte, porque a linha ainda não existe, todo caminho que escreve em
-// `events` ou nos `ticket_tiers` de um evento trava essa linha com `for update`
-// antes de decidir qualquer coisa. É o que impede que duas operações
-// simultâneas decidam sobre leituras diferentes do mesmo evento.
-
-// Helper local por enquanto. Quando orders e payments precisarem do mesmo,
-// sobe para src/db e passa a ser infraestrutura compartilhada.
 async function withTransaction<T>(
   fn: (client: PoolClient) => Promise<T>,
 ): Promise<T> {
@@ -41,9 +33,6 @@ async function withTransaction<T>(
   }
 }
 
-// Valida e devolve os setores já normalizados. O nome vai aparado porque o
-// único do banco é sensível a espaço e a caixa, e " Pista" e "Pista" passariam
-// os dois enquanto para quem compra são o mesmo setor.
 function prepareTiers(tiers: TierInput[]): TierInput[] {
   const seen = new Set<string>();
 
@@ -78,15 +67,8 @@ function prepareTiers(tiers: TierInput[]): TierInput[] {
 
 const REQUIRED = ["title", "category", "startsAt", "venueName", "city"] as const;
 
-// Texto obrigatório vem aparado antes da checagem: sem isso um título só com
-// espaços passa pelo filtro de obrigatórios e o evento nasce em branco.
-// Aparar antes do `??` também garante que espaço em branco não seja tratado
-// como ausência e caia no valor importado, porque `??` só cede a nulo.
 const trim = (value: string | undefined) => value?.trim();
 
-// O item importado só preenche o que o organizador deixou de fora. Definir
-// data, local, capacidade e preço é atribuição dele, então o que ele mandou
-// prevalece sobre o que veio da fonte externa.
 function resolve(
   organizerId: string,
   input: CreateEventInput,
@@ -112,8 +94,6 @@ function resolve(
     country: trim(input.country) ?? item?.country ?? "BR",
     externalSource: item?.source ?? null,
     externalId: item?.externalId ?? null,
-    // O item inteiro, não só o campo `raw`: o snapshot registra o que foi
-    // importado, e depois dele o evento não depende mais da fonte.
     externalSnapshot: item,
   };
 
@@ -139,10 +119,6 @@ export async function create(
 ): Promise<EventWithTiers> {
   const tiers = prepareTiers(input.tiers ?? []);
 
-  // O snapshot é buscado aqui, no servidor, e nunca aceito pronto do cliente:
-  // receber o item permitiria ao organizador reescrever a origem da importação.
-  // Fica fora da transação de propósito, porque getById pode ir à rede e
-  // segurar conexão do pool esperando API alheia é como se esgota o pool.
   const item = input.externalId ? await catalog.getById(input.externalId) : null;
   if (input.externalId && !item) {
     throw notFound("Item do catálogo não encontrado.");
@@ -150,8 +126,6 @@ export async function create(
 
   const fields = resolve(organizerId, input, item);
 
-  // Evento e setores nascem na mesma transação: evento sem setor seria estado
-  // intermediário visível.
   return withTransaction(async (client) => {
     const event = await repository.insertEvent(fields, client);
     return {
@@ -166,8 +140,6 @@ export async function getOwned(
   organizerId: string,
 ): Promise<EventWithTiers> {
   const event = await repository.findOwned(id, organizerId);
-  // 404 e não 403 quando o evento é de outro organizador: 403 confirmaria que
-  // o id existe, e a existência de evento alheio não é informação dele.
   if (!event) {
     throw notFound("Evento não encontrado.");
   }
@@ -192,14 +164,9 @@ export async function searchPublished(
 
 export async function getPublished(id: string): Promise<PublicEventDetail> {
   const event = await repository.findPublished(id);
-  // Rascunho e cancelado respondem o mesmo que inexistente: para quem não é o
-  // dono, um evento que ainda não foi publicado não pode ser distinguível de um
-  // que nunca existiu.
   if (!event) {
     throw notFound("Evento não encontrado.");
   }
-  // Setores vêm de findTiers, exatamente a mesma conversão que o caminho do
-  // organizador usa. É lá que `available` nasce e `allocated` fica.
   return { ...toPublicEvent(event), tiers: await repository.findTiers(id) };
 }
 
@@ -212,10 +179,6 @@ export async function update(
   const tiers = tierInput ? prepareTiers(tierInput) : null;
 
   return withTransaction(async (client) => {
-    // O bloqueio vem antes de qualquer escrita, e não só para editar campo:
-    // um PATCH que envie apenas setores não tocaria em `events` e correria em
-    // paralelo com uma publicação, que decidiria sobre setores já apagados.
-    // A leitura travada também é o que separa 404 de 409 aqui.
     const event = await repository.findOwnedForUpdate(id, organizerId, client);
     if (!event) {
       throw notFound("Evento não encontrado.");
@@ -234,9 +197,6 @@ export async function update(
       throw new Error(`Evento ${id} mudou de estado sob bloqueio.`);
     }
 
-    // Enviar `tiers` troca o id de todos os setores, porque a substituição
-    // apaga e reinsere. Em rascunho ninguém referencia esses ids, mas a tela do
-    // organizador não pode guardá-los entre uma edição e outra.
     return {
       ...updated,
       tiers: tiers
@@ -246,11 +206,6 @@ export async function update(
   });
 }
 
-// Publica com a linha do evento travada até o fim da transação. O estado de
-// origem no where protege a transição, mas não protege as precondições de
-// negócio: sem o bloqueio, um PATCH concorrente removeria os setores ou jogaria
-// a data para o passado entre a validação e a escrita, e o evento seria
-// publicado violando as duas.
 export async function publish(
   id: string,
   organizerId: string,
@@ -283,8 +238,6 @@ export async function publish(
       "PUBLISHED",
       client,
     );
-    // A posse já foi conferida acima, então linha não afetada aqui só pode ser
-    // estado: o evento não está em rascunho.
     if (!published) {
       throw conflict("EVENT_NOT_DRAFT", "Apenas rascunho pode ser publicado.");
     }
@@ -293,10 +246,6 @@ export async function publish(
   });
 }
 
-// Cancelamento não tem precondição de negócio além do próprio estado, que o
-// where já garante. Trava a linha mesmo assim para entrar na mesma fila de
-// publish e update: sem isso, um cancelamento e uma publicação simultâneos
-// decidiriam sobre leituras diferentes do mesmo evento.
 export async function cancel(
   id: string,
   organizerId: string,

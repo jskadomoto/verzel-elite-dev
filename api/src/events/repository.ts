@@ -12,8 +12,6 @@ import type {
 
 type Executor = Pool | PoolClient;
 
-// `external_snapshot` fica fora da projeção: é o item bruto do catálogo, só
-// serve para auditoria da importação e ninguém que lê evento precisa dele.
 const EVENT_COLUMNS = `id, organizer_id, status, title, description, category,
   image_url, starts_at, timezone, venue_name, address, city, state, country,
   external_source, external_id, snapshot_at, created_at, updated_at`;
@@ -73,8 +71,6 @@ const toEvent = (row: EventRow): EventRecord => ({
   updatedAt: row.updated_at.toISOString(),
 });
 
-// A disponibilidade nasce aqui, na fronteira do banco, para que `allocated` não
-// tenha caminho até a resposta.
 const toTier = (row: TierRow): Tier => ({
   id: row.id,
   eventId: row.event_id,
@@ -84,8 +80,6 @@ const toTier = (row: TierRow): Tier => ({
   available: row.capacity - row.allocated,
 });
 
-// `snapshot_at` é derivado do próprio snapshot, na mesma escrita, para que não
-// exista linha com data sem item nem item sem data.
 export async function insertEvent(
   input: NewEvent,
   db: Executor = pool,
@@ -143,11 +137,6 @@ export async function insertTiers(
   return rows.map(toTier);
 }
 
-// Exige PoolClient em vez de aceitar o pool: são duas escritas, e falha entre o
-// delete e o insert deixaria o evento sem setor nenhum. Sem valor padrão, o
-// compilador recusa a chamada fora de transação.
-// Só faz sentido com o evento em rascunho, onde nenhum pedido referencia um
-// setor. Fora disso, apagar setor arrastaria order_items junto.
 export async function replaceTiers(
   eventId: string,
   tiers: TierInput[],
@@ -182,9 +171,6 @@ export async function findOwned(
   return rows[0] ? toEvent(rows[0]) : null;
 }
 
-// Trava a linha do evento até o fim da transação, para que precondição lida
-// não mude antes da escrita que depende dela. Exige PoolClient: `for update`
-// fora de transação trava e solta na mesma instrução, sem proteger nada.
 export async function findOwnedForUpdate(
   id: string,
   organizerId: string,
@@ -213,9 +199,6 @@ const UPDATABLE: Record<keyof EventFields, string> = {
   country: "country",
 };
 
-// A condição de rascunho viaja no where, não numa leitura anterior. Devolver
-// null cobre os três casos de linha não afetada: inexistente, de outro
-// organizador, ou já fora de rascunho. Quem chama distingue.
 export async function updateOwnedDraft(
   id: string,
   organizerId: string,
@@ -257,29 +240,8 @@ type PublicRow = EventRow & {
   total: string;
 };
 
-// Fuso de referência único do filtro de período. A data simples que chega vira
-// instante aqui, e não no cliente. Ver ARQUITETURA, seção de operação.
 const PERIOD_TIMEZONE = "America/Sao_Paulo";
 
-// Correspondência simples, sem índice invertido e sem busca textual do
-// Postgres: é decisão registrada na arquitetura, porque o padrão de consulta é
-// nome próprio digitado pela metade, que radicalização atende pior.
-//
-// A comparação é `strpos`, e não LIKE, porque LIKE dá significado a `%` e `_`
-// digitados pelo usuário. Escapar antes não resolve: `unaccent` roda depois e
-// recria metacaractere a partir de caractere comum, como o `％` de largura
-// inteira, que vira `%`. Sem padrão não há curinga para escapar nem escape para
-// desfazer, e "contém esta substring" é exatamente a semântica pretendida.
-//
-// `unaccent` e `lower` entram nos dois lados porque o acervo é em português:
-// sem eles "metropole" não acha "Metrópole".
-//
-// Cidade é igualdade, não substring: filtro escolhe um valor existente, não
-// procura por pedaço. Ver a nota em public-routes.ts sobre o efeito na tela.
-//
-// O período compara data de parede: o início é meia-noite do dia informado no
-// fuso de referência, e o fim é exclusivo na meia-noite do dia seguinte, para
-// que o último dia do intervalo entre inteiro.
 const PUBLISHED_FILTER = `status = 'PUBLISHED'
        and ($1::text is null
             or strpos(unaccent(lower(title)), unaccent(lower($1))) > 0
@@ -289,8 +251,6 @@ const PUBLISHED_FILTER = `status = 'PUBLISHED'
        and ($4::date is null or starts_at >= ($4::date)::timestamp at time zone $6)
        and ($5::date is null or starts_at < (($5::date) + 1)::timestamp at time zone $6)`;
 
-// `||` e não `??`: string vazia significa filtro não informado. Com `??` um
-// `?city=` viraria filtro por cidade vazia e zeraria o catálogo.
 const filterValues = (filters: PublicSearchFilters) => [
   filters.q || null,
   filters.city || null,
@@ -300,8 +260,6 @@ const filterValues = (filters: PublicSearchFilters) => [
   PERIOD_TIMEZONE,
 ];
 
-// A ordenação leva o id junto para que a paginação seja estável entre páginas
-// quando dois eventos começam no mesmo instante.
 export async function searchPublished(
   filters: PublicSearchFilters,
   db: Executor = pool,
@@ -333,10 +291,6 @@ export async function searchPublished(
     };
   }
 
-  // `count(*) over()` só existe nas linhas devolvidas, então página vazia
-  // perderia o total. Sem ele a tela mostraria "nenhum evento" onde o correto é
-  // "fim da lista". A segunda consulta não é redundância: ela roda apenas neste
-  // caso, e nunca no caminho em que a primeira já trouxe o total.
   const total =
     filters.page > 0 ? await countPublished(values, db) : 0;
 
@@ -354,8 +308,6 @@ async function countPublished(
   return Number(rows[0].total);
 }
 
-// O status vai no where, e não numa checagem depois da leitura: rascunho e
-// cancelado precisam ser indistinguíveis de inexistente para quem não é o dono.
 export async function findPublished(
   id: string,
   db: Executor = pool,
@@ -367,8 +319,6 @@ export async function findPublished(
   return rows[0] ? toEvent(rows[0]) : null;
 }
 
-// O estado de origem vai na cláusula where. Sem select antes: entre a leitura e
-// a escrita cabe outra transição, e a linha afetada é o que decide.
 export async function transition(
   id: string,
   organizerId: string,

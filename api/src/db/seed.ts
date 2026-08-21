@@ -18,6 +18,8 @@ const GATE_EMAIL = "portaria@demo.com";
 const SEED_QUANTITY = 2;
 const SHARE_PATH = "/ingresso";
 
+const publicUrl = () => ENV.WEB_URL.replace(/\/+$/, "");
+
 const SEED_CARD = {
   number: "4242 4242 4242 4242",
   holder: "CLIENTE UM",
@@ -256,7 +258,7 @@ async function main() {
     event,
     issued,
     shared,
-    shareUrl: `${ENV.WEB_URL}${SHARE_PATH}/${token}`,
+    shareUrl: `${publicUrl()}${SHARE_PATH}/${token}`,
   });
 }
 

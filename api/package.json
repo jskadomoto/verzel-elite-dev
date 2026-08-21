@@ -10,6 +10,7 @@
     "start": "node dist/server.js",
     "seed": "tsx --env-file=.env src/db/seed.ts",
     "seed:built": "node dist/db/seed.js",
+    "reset": "tsx --env-file=.env src/db/reset.ts",
     "test": "tsx --env-file=.env --test tests/*.test.ts",
     "test:repeat": "for i in 1 2 3 4 5; do echo \"execução $i\"; tsx --env-file=.env --test tests/*.test.ts || exit 1; done"
   },

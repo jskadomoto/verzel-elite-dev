@@ -21,6 +21,17 @@ export type TicketRecord = {
   createdAt: string;
 };
 
+export type ReadCode = {
+  prefix: string | null;
+  ticketId: string | null;
+};
+
+export type TicketClaim = {
+  status: TicketStatus;
+  usedAt: string | null;
+  usedBy: string | null;
+};
+
 export type TicketEvent = {
   id: string;
   status: EventStatus;

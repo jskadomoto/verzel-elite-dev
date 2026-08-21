@@ -1,4 +1,9 @@
-import { createHash, createHmac, randomBytes } from "node:crypto";
+import {
+  createHash,
+  createHmac,
+  randomBytes,
+  timingSafeEqual,
+} from "node:crypto";
 import { withTransaction } from "../db/transaction";
 import { ENV } from "../env";
 import * as events from "../events/repository";
@@ -7,6 +12,7 @@ import { notFound } from "../http/errors";
 import * as repository from "./repository";
 import type {
   IssuedShareLink,
+  ReadCode,
   SharedTicket,
   TicketDetail,
   TicketEvent,
@@ -22,7 +28,17 @@ export const SHARE_TOKEN_BYTES = 32;
 export const SHARE_HOURS_AFTER_START = 12;
 export const SHARE_MINIMUM_HOURS = 1;
 
+export const SIGNATURE_LENGTH = Math.ceil((SIGNATURE_BYTES * 4) / 3);
+const IDENTIFIER_PATTERN = /^[0-9a-f]{32}$/;
+const IDENTIFIER_GROUPS = [8, 12, 16, 20];
+
 const withoutSeparators = (ticketId: string) => ticketId.replaceAll("-", "");
+
+const withSeparators = (identifier: string) =>
+  IDENTIFIER_GROUPS.reduceRight(
+    (formatted, at) => `${formatted.slice(0, at)}-${formatted.slice(at)}`,
+    identifier,
+  );
 
 const signatureFor = (signed: string) =>
   createHmac("sha256", ENV.TICKET_SECRET)
@@ -36,6 +52,31 @@ export function codeFor(ticketId: string): string {
     CODE_SEPARATOR,
   );
   return [signed, signatureFor(signed)].join(CODE_SEPARATOR);
+}
+
+function signatureMatches(signed: string, signature: string): boolean {
+  const expected = Buffer.from(signatureFor(signed));
+  const given = Buffer.from(signature);
+  return expected.length === given.length && timingSafeEqual(expected, given);
+}
+
+const UNREADABLE: ReadCode = { prefix: null, ticketId: null };
+
+export function readCode(code: string): ReadCode {
+  const [version, identifier, signature, ...rest] = code.split(CODE_SEPARATOR);
+
+  if (rest.length || version !== CODE_VERSION) return UNREADABLE;
+  if (!IDENTIFIER_PATTERN.test(identifier ?? "")) return UNREADABLE;
+  if (signature?.length !== SIGNATURE_LENGTH) return UNREADABLE;
+
+  const signed = [version, identifier].join(CODE_SEPARATOR);
+
+  return {
+    prefix: signed,
+    ticketId: signatureMatches(signed, signature)
+      ? withSeparators(identifier)
+      : null,
+  };
 }
 
 const toTicketEvent = (event: EventRecord): TicketEvent => ({

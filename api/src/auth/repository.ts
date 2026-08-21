@@ -42,6 +42,22 @@ export async function findById(
   return rows[0] ? toUser(rows[0]) : null;
 }
 
+export async function findByIds(
+  ids: string[],
+  db: Executor = pool,
+): Promise<Map<string, User>> {
+  const byId = new Map<string, User>();
+  if (!ids.length) return byId;
+
+  const { rows } = await db.query<Row>(
+    `select id, name, email, password_hash, role from users
+     where id = any($1::uuid[])`,
+    [ids],
+  );
+  for (const row of rows) byId.set(row.id, toUser(row));
+  return byId;
+}
+
 export async function create(
   input: { name: string; email: string; passwordHash: string; role: Role },
   db: Executor = pool,

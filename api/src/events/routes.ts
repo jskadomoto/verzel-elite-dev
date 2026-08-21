@@ -1,6 +1,8 @@
 import { Router } from "express";
 import z from "zod";
 import { requireAuth, requireRole } from "../auth/middleware";
+import * as gate from "../gate/service";
+import type { AssignGateUserInput } from "../gate/types";
 import {
   param,
   validateBody,
@@ -50,6 +52,20 @@ const updateSchema = eventFieldsSchema.extend({
   tiers: tiersSchema.optional(),
 });
 
+const gateUserSchema = z
+  .object({
+    email: z.string().trim().toLowerCase().pipe(z.email()),
+    name: z.string().trim().min(2).max(120).optional(),
+    password: z.string().min(8).max(72).optional(),
+  })
+  .refine(
+    (body) => (body.name === undefined) === (body.password === undefined),
+    {
+      message:
+        "Nome e senha andam juntos: os dois criam a conta, nenhum atribui a existente.",
+    },
+  );
+
 const validateId = validateParam("id", z.uuid(), "Evento não encontrado.");
 const listSchema = z.object({
   page: z.coerce.number().int().min(0).max(500).default(0),
@@ -86,3 +102,15 @@ eventsRouter.post("/:id/publish", validateId, async (req, res) => {
 eventsRouter.post("/:id/cancel", validateId, async (req, res) => {
   res.json(await service.cancel(param(req, "id"), req.session!.sub));
 });
+
+eventsRouter.post(
+  "/:id/gate-users",
+  validateId,
+  validateBody(gateUserSchema),
+  async (req, res) => {
+    const input = req.valid as AssignGateUserInput;
+    res
+      .status(201)
+      .json(await gate.assignGateUser(param(req, "id"), req.session!.sub, input));
+  },
+);

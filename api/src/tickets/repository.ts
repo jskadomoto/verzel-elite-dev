@@ -4,6 +4,7 @@ import type {
   NewTicket,
   OpenedShare,
   ShareLink,
+  TicketClaim,
   TicketRecord,
   TicketStatus,
 } from "./types";
@@ -16,6 +17,8 @@ const TICKET_COLUMNS = `id, order_id, event_id, tier_id, seat_label, status,
 const SHARE_COLUMNS = `expires_at, opened_count, last_opened_at, created_at`;
 
 const SHARE_IS_ACTIVE = `revoked_at is null and expires_at > now()`;
+
+const CLAIM_COLUMNS = `status, used_at, used_by`;
 
 type TicketRow = {
   id: string;
@@ -34,6 +37,18 @@ type ShareRow = {
   last_opened_at: Date | null;
   created_at: Date;
 };
+
+type ClaimRow = {
+  status: TicketStatus;
+  used_at: Date | null;
+  used_by: string | null;
+};
+
+const toClaim = (row: ClaimRow): TicketClaim => ({
+  status: row.status,
+  usedAt: row.used_at?.toISOString() ?? null,
+  usedBy: row.used_by,
+});
 
 const toShare = (row: ShareRow): ShareLink => ({
   expiresAt: row.expires_at.toISOString(),
@@ -143,6 +158,32 @@ export async function findById(
     [id],
   );
   return rows[0] ? toTicket(rows[0]) : null;
+}
+
+export async function claim(
+  id: string,
+  gateUserId: string,
+  db: PoolClient,
+): Promise<TicketClaim | null> {
+  const { rows } = await db.query<ClaimRow>(
+    `update tickets
+     set status = 'USED', used_at = now(), used_by = $2, updated_at = now()
+     where id = $1 and status = 'VALID'
+     returning ${CLAIM_COLUMNS}`,
+    [id, gateUserId],
+  );
+  return rows[0] ? toClaim(rows[0]) : null;
+}
+
+export async function findClaim(
+  id: string,
+  db: Executor = pool,
+): Promise<TicketClaim | null> {
+  const { rows } = await db.query<ClaimRow>(
+    `select ${CLAIM_COLUMNS} from tickets where id = $1`,
+    [id],
+  );
+  return rows[0] ? toClaim(rows[0]) : null;
 }
 
 export async function revokeSharesOf(

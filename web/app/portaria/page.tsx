@@ -14,7 +14,7 @@ export default async function Page() {
   if (!result.ok) {
     return (
       <AreaShell>
-        <section className="mt-5 flex flex-col items-start gap-3">
+        <section className="mt-8 flex flex-col items-start gap-3">
           <p className="text-muted">{messageFor(result.code)}</p>
           <RetryButton />
         </section>

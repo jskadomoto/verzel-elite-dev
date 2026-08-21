@@ -141,7 +141,7 @@ export function GateConsole({
 
   if (!events.length) {
     return (
-      <section className="card mt-5 flex flex-col gap-2">
+      <section className="card mt-8 flex flex-col gap-2">
         <p className="font-medium">Nenhum evento atribuído à sua portaria.</p>
         <p className="text-sm text-muted">
           O organizador do evento precisa atribuir esta conta antes da entrada.
@@ -151,7 +151,7 @@ export function GateConsole({
   }
 
   return (
-    <div className="mt-5 flex flex-col gap-4">
+    <div className="mt-8 flex flex-col gap-5">
       <section className="card flex flex-col gap-2">
         <label htmlFor="gate-event" className="label">
           Evento em que você está trabalhando

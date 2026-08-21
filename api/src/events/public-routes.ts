@@ -35,6 +35,10 @@ publicEventsRouter.get("/", validateQuery(searchSchema), async (req, res) => {
   res.json(await service.searchPublished(req.valid as PublicSearchFilters));
 });
 
+publicEventsRouter.get("/cities", async (_req, res) => {
+  res.json(await service.listPublishedCities());
+});
+
 publicEventsRouter.get(
   "/:id",
   validateParam("id", z.uuid(), "Evento não encontrado."),

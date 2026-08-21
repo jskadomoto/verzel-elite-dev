@@ -10,6 +10,7 @@ import {
   type EventWithTiers,
   type NewEvent,
   type OrganizerListResult,
+  type PublicCitiesResult,
   type PublicEventDetail,
   type PublicSearchFilters,
   type PublicSearchResult,
@@ -180,6 +181,10 @@ export async function searchPublished(
     pageSize: repository.PUBLIC_PAGE_SIZE,
     total,
   };
+}
+
+export async function listPublishedCities(): Promise<PublicCitiesResult> {
+  return { cities: await repository.findPublishedCities() };
 }
 
 export async function getPublished(id: string): Promise<PublicEventDetail> {

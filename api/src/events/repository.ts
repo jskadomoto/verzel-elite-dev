@@ -377,6 +377,18 @@ export async function findPublished(
   return rows[0] ? toEvent(rows[0]) : null;
 }
 
+export async function findPublishedCities(
+  db: Executor = pool,
+): Promise<string[]> {
+  const { rows } = await db.query<{ city: string }>(
+    `select distinct city, unaccent(lower(city)) collate "C" as ordem
+     from events
+     where status = 'PUBLISHED'
+     order by ordem`,
+  );
+  return rows.map((row) => row.city);
+}
+
 export async function transition(
   id: string,
   organizerId: string,

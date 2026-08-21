@@ -81,6 +81,10 @@ export type PublicSearchFilters = {
   page: number;
 };
 
+export type PublicCitiesResult = {
+  cities: string[];
+};
+
 export type PublicSearchResult = {
   items: PublicEventSummary[];
   page: number;

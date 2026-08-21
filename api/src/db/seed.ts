@@ -1,10 +1,29 @@
+import { randomUUID } from "node:crypto";
 import { pool } from "./pool";
 import { hash } from "../auth/password";
 import * as users from "../auth/repository";
+import { ENV } from "../env";
 import * as events from "../events/service";
 import type { EventWithTiers } from "../events/types";
+import * as gate from "../gate/service";
+import * as orders from "../orders/service";
+import * as payments from "../payments/service";
+import * as tickets from "../tickets/repository";
+import { codeFor, share } from "../tickets/service";
+import type { TicketRecord } from "../tickets/types";
 
 const PASSWORD = "senha123";
+const BUYER_EMAIL = "cliente1@demo.com";
+const GATE_EMAIL = "portaria@demo.com";
+const SEED_QUANTITY = 2;
+const SHARE_PATH = "/ingresso";
+
+const SEED_CARD = {
+  number: "4242 4242 4242 4242",
+  holder: "CLIENTE UM",
+  expiry: "12/30",
+  cvc: "123",
+};
 
 const SEED_EVENT_TIMEZONE = "America/Sao_Paulo";
 const SEED_EVENT_START_TIME = "20:00:00";
@@ -96,6 +115,32 @@ async function seedPublishedEvent(
   return publishIfDraft(event, organizerId);
 }
 
+const seededTicketsOf = async (eventId: string, holderUserId: string) =>
+  (await tickets.findByHolder(holderUserId))
+    .filter((ticket) => ticket.eventId === eventId)
+    .sort((one, other) => one.seatLabel.localeCompare(other.seatLabel));
+
+async function seedPaidTickets(
+  event: EventWithTiers,
+  buyerId: string,
+): Promise<TicketRecord[]> {
+  const owned = await seededTicketsOf(event.id, buyerId);
+  if (owned.length) return owned;
+
+  const { order } = await orders.create(buyerId, {
+    eventId: event.id,
+    items: [{ tierId: event.tiers[0].id, quantity: SEED_QUANTITY }],
+    idempotencyKey: `seed-${randomUUID()}`,
+  });
+
+  await payments.pay(buyerId, order.id, {
+    card: SEED_CARD,
+    idempotencyKey: `seed-${randomUUID()}`,
+  });
+
+  return seededTicketsOf(event.id, buyerId);
+}
+
 const asBrl = (priceCents: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
     priceCents / 100,
@@ -108,10 +153,18 @@ const asLocalDateTime = (instant: string, timezone: string) =>
     timeStyle: "short",
   }).format(new Date(instant));
 
-function printCredentials(
-  seeded: Array<{ role: string; email: string }>,
-  event: EventWithTiers,
-) {
+type Seeded = {
+  users: Array<{ role: string; email: string }>;
+  event: EventWithTiers;
+  issued: TicketRecord[];
+  shared: TicketRecord;
+  shareUrl: string;
+};
+
+const seatOf = (ticket: TicketRecord, event: EventWithTiers) =>
+  `${event.tiers.find((tier) => tier.id === ticket.tierId)?.name ?? "?"} ${ticket.seatLabel}`;
+
+function printSummary({ users: seeded, event, issued, shared, shareUrl }: Seeded) {
   console.log("\nUsuários semeados, senha única:", PASSWORD, "\n");
   for (const user of seeded) {
     console.log(`${user.role.padEnd(10)} ${user.email}`);
@@ -131,7 +184,28 @@ function printCredentials(
       ).padStart(3)} lugares`,
     );
   }
-  console.log();
+
+  console.log(`\n  portaria do evento: ${GATE_EMAIL}`);
+
+  console.log(`\nIngressos pagos de ${BUYER_EMAIL}:\n`);
+  for (const ticket of issued) {
+    console.log(`  ${seatOf(ticket, event).padEnd(16)} ${ticket.status}`);
+  }
+
+  const forGate = issued.find((ticket) => ticket.status === "VALID");
+
+  console.log("\nCódigo para colar na portaria:\n");
+  console.log(
+    forGate
+      ? `  ${codeFor(forGate.id)}   (${seatOf(forGate, event)})`
+      : "  nenhum ingresso semeado continua válido; todos já foram validados",
+  );
+
+  console.log("\nLink de compartilhamento:\n");
+  console.log(`  ${shareUrl}   (${seatOf(shared, event)})`);
+  console.log(
+    "\n  cada execução do seed gera um link novo e revoga o anterior\n",
+  );
 }
 
 async function main() {
@@ -164,9 +238,26 @@ async function main() {
     }),
   ]);
 
-  const [organizer] = seeded;
+  const [organizer, buyer] = seeded;
 
-  printCredentials(seeded, await seedPublishedEvent(organizer.id));
+  const event = await seedPublishedEvent(organizer.id);
+  await gate.assignGateUser(event.id, organizer.id, { email: GATE_EMAIL });
+
+  const issued = await seedPaidTickets(event, buyer.id);
+  const shared = issued.at(-1);
+  if (!shared) {
+    throw new Error(`Nenhum ingresso emitido para ${BUYER_EMAIL}.`);
+  }
+
+  const { token } = await share(shared.id, buyer.id);
+
+  printSummary({
+    users: seeded,
+    event,
+    issued,
+    shared,
+    shareUrl: `${ENV.WEB_URL}${SHARE_PATH}/${token}`,
+  });
 }
 
 main()

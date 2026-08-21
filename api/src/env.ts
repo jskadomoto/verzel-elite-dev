@@ -13,6 +13,7 @@ export const ENV = {
   DATABASE_URL: required("DATABASE_URL"),
   SESSION_SECRET: required("SESSION_SECRET"),
   TICKET_SECRET: required("TICKET_SECRET"),
+  WEB_URL: process.env.WEB_URL || "http://localhost:3000",
   TICKETMASTER_API_KEY: process.env.TICKETMASTER_API_KEY || "",
 };
 

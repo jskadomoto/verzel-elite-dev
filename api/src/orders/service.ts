@@ -1,11 +1,13 @@
 import { withTransaction } from "../db/transaction";
 import * as events from "../events/repository";
-import { badRequest, conflict } from "../http/errors";
+import { badRequest, conflict, notFound } from "../http/errors";
+import * as tickets from "../tickets/repository";
 import * as repository from "./repository";
 import type {
   CreatedOrder,
   CreateOrderInput,
   ExpirySweep,
+  OrderDetail,
   OrderItemInput,
   PricedItem,
 } from "./types";
@@ -54,6 +56,21 @@ const byTierId = (items: OrderItemInput[]) =>
 
 const totalOf = (items: PricedItem[]) =>
   items.reduce((sum, item) => sum + item.unitPriceCents * item.quantity, 0);
+
+export async function getOwned(
+  customerId: string,
+  orderId: string,
+): Promise<OrderDetail> {
+  const order = await repository.findOwned(orderId, customerId);
+  if (!order) throw notFound("Pedido não encontrado.");
+
+  const [items, issued] = await Promise.all([
+    repository.findItems(orderId),
+    order.status === "PAID" ? tickets.findByOrder(orderId) : [],
+  ]);
+
+  return { ...order, items, tickets: issued };
+}
 
 export async function create(
   customerId: string,

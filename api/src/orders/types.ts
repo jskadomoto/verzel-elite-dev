@@ -1,3 +1,5 @@
+import type { TicketRecord } from "../tickets/types";
+
 export type OrderStatus = "PENDING" | "PAID" | "EXPIRED" | "CANCELLED";
 
 export type OrderItemInput = {
@@ -43,6 +45,8 @@ export type OrderRecord = {
 };
 
 export type OrderWithItems = OrderRecord & { items: OrderItem[] };
+
+export type OrderDetail = OrderWithItems & { tickets: TicketRecord[] };
 
 export type LockedOrder = {
   order: OrderRecord;

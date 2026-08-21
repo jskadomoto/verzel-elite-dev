@@ -59,6 +59,10 @@ ordersRouter.post("/", validateBody(createSchema), async (req, res) => {
   res.status(created ? 201 : 200).json(order);
 });
 
+ordersRouter.get("/:id", validateId, async (req, res) => {
+  res.json(await service.getOwned(req.session!.sub, param(req, "id")));
+});
+
 ordersRouter.post(
   "/:id/payment",
   validateId,

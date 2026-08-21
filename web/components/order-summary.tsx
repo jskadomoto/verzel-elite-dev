@@ -13,7 +13,7 @@ export function OrderSummary({
       </h2>
 
       {event ? (
-        <p className="text-sm text-brand">
+        <p className="text-sm font-medium text-gold">
           {formatEventDateTimeLong(event.startsAt, event.timezone)}
         </p>
       ) : (
@@ -40,7 +40,7 @@ export function OrderSummary({
 
       <div className="flex items-baseline justify-between gap-3 border-t border-line pt-3">
         <span className="text-muted">Total</span>
-        <span className="text-xl font-semibold whitespace-nowrap">
+        <span className="text-xl font-bold whitespace-nowrap text-gold">
           {formatBrl(order.totalCents)}
         </span>
       </div>

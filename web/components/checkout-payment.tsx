@@ -122,15 +122,15 @@ export function CheckoutPayment({
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       {state ? (
         <CheckoutBlocked block={state} orderId={orderId} eventId={eventId} />
       ) : (
-        <div className="card flex items-baseline justify-between gap-3 border-brand/40 bg-brand/10">
+        <div className="card flex items-baseline justify-between gap-3 border-gold/40 bg-gold/10">
           <span className="text-muted">Reserva válida por</span>
           <span
             suppressHydrationWarning
-            className="font-mono text-2xl font-semibold tabular-nums text-brand"
+            className="font-mono text-2xl font-bold tabular-nums text-gold"
           >
             {formatRemaining(remaining)}
           </span>

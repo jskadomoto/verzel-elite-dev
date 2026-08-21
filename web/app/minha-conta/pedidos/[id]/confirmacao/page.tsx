@@ -20,7 +20,7 @@ export default async function ConfirmationPage({
     if (result.status === 401) redirect("/login");
 
     return (
-      <main className="mx-auto flex min-h-full w-full max-w-lg flex-col items-start gap-4 px-4 py-6">
+      <main className="mx-auto flex min-h-full w-full max-w-lg flex-col items-start gap-5 px-4 py-6">
         <h1 className="text-xl font-semibold">Confirmação indisponível</h1>
         <p className="text-muted">{messageFor(result.code)}</p>
         <RetryButton />
@@ -33,14 +33,12 @@ export default async function ConfirmationPage({
   if (order.status !== "PAID") redirect(checkoutHref(order.id));
 
   return (
-    <main className="mx-auto flex min-h-full w-full max-w-lg flex-col gap-4 px-4 py-6">
+    <main className="mx-auto flex min-h-full w-full max-w-lg flex-col gap-5 px-4 py-6">
       <header className="flex flex-col gap-2">
         <span className="chip self-start border-success/40 bg-success/15 text-success">
           Pagamento aprovado
         </span>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Seus ingressos foram emitidos
-        </h1>
+        <h1 className="text-2xl font-extrabold">Seus ingressos foram emitidos</h1>
       </header>
 
       <OrderSummary order={order} event={event} />

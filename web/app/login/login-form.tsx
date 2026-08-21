@@ -29,18 +29,13 @@ export function LoginForm() {
       const payload = await response.json().catch(() => null);
 
       if (!response.ok) {
-        // A mensagem sai do `code`, nunca do texto que veio na resposta.
         setError(messageFor(codeOf(payload)));
         setPending(false);
         return;
       }
 
       const role = payload?.user?.role as Role | undefined;
-      // Papel desconhecido não deveria acontecer, mas cair na raiz é melhor do
-      // que navegar para uma área que talvez não exista.
       router.replace(role ? (HOME[role] ?? "/") : "/");
-      // O cookie é httpOnly e a área é renderizada no servidor: sem o refresh,
-      // a navegação reaproveitaria a árvore montada antes de existir sessão.
       router.refresh();
     } catch {
       setError(messageFor("UPSTREAM_UNAVAILABLE"));
@@ -52,8 +47,6 @@ export function LoginForm() {
     <form onSubmit={entrar} className="flex flex-col gap-4">
       <label className="flex flex-col gap-1">
         <span className="text-sm">E-mail</span>
-        {/* text-base porque abaixo de 16px o navegador do celular aplica zoom
-            ao focar o campo, e a tela salta. */}
         <input
           name="email"
           type="email"

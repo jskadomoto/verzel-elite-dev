@@ -13,10 +13,6 @@ export function LogoutButton() {
     setPending(true);
     setError(null);
 
-    // O cookie de sessão é httpOnly, então o cliente não tem como apagá-lo:
-    // quem encerra a sessão é o handler. Se a chamada falhar, a sessão continua
-    // inteira, e navegar para o login aqui apenas fingiria ter saído, com o
-    // middleware deixando entrar de novo na navegação seguinte.
     const encerrou = await fetch("/api/auth/logout", { method: "POST" })
       .then((response) => response.ok)
       .catch(() => false);

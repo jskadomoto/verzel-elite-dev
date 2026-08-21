@@ -13,8 +13,6 @@ export async function register(input: {
 }): Promise<AuthResult> {
   const passwordHash = await hash(input.password);
 
-  // O papel nunca vem da requisição. Cadastro público cria apenas cliente;
-  // organizador e portaria têm origem administrativa.
   const user = await repository.create({
     name: input.name,
     email: input.email,
@@ -39,8 +37,6 @@ export async function login(input: {
   const user = await repository.findByEmail(input.email);
 
   if (!user) {
-    // Gasta o mesmo tempo do caminho com usuário existente. Sem isso, a
-    // diferença de latência entre os dois ramos enumera e-mails cadastrados.
     await wasteTime();
     throw new AppError(
       "INVALID_CREDENTIALS",

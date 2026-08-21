@@ -35,7 +35,6 @@ function pickImage(images: TmEvent["images"]): string | null {
   return sorted[0]?.url ?? null;
 }
 
-// Evento sem data ou sem local não serve para criar venda
 function toCatalogItem(event: TmEvent): CatalogItem | null {
   const venue = event._embedded?.venues?.[0];
   const startsAt = event?.dates?.start?.dateTime;

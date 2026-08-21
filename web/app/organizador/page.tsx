@@ -2,11 +2,8 @@ import { redirect } from "next/navigation";
 import { AreaShell } from "@/components/area-shell";
 import { OrganizerEventList } from "@/components/organizer-event-list";
 import { readAuthed } from "@/lib/api";
-import {
-  lastPageOf,
-  organizerHref,
-  type OrganizerListResult,
-} from "@/lib/organizer";
+import { organizerHref, type OrganizerListResult } from "@/lib/organizer";
+import { lastPageOf } from "@/lib/pagination";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;

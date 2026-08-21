@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { OrganizerPagination } from "@/components/organizer-pagination";
+import { Pagination } from "@/components/pagination";
 import { RetryButton } from "@/components/retry-button";
 import type { ReadResult } from "@/lib/api";
 import { messageFor } from "@/lib/errors";
 import { formatEventDateTime } from "@/lib/format";
 import {
+  organizerHref,
   STATUS_LABEL,
   STATUS_STYLE,
   type OrganizerEvent,
@@ -60,7 +61,13 @@ export function OrganizerEventList({
             ))}
           </ul>
 
-          <OrganizerPagination page={page} pageSize={pageSize} total={total} />
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            previousHref={organizerHref(Math.max(0, page - 1))}
+            nextHref={organizerHref(page + 1)}
+          />
         </>
       )}
     </div>

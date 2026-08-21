@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { CatalogPagination } from "@/components/catalog-pagination";
+import { Pagination } from "@/components/pagination";
 import { EventCard } from "@/components/event-card";
 import { RetryButton } from "@/components/retry-button";
 import type { ReadResult } from "@/lib/api";
 import { messageFor } from "@/lib/errors";
 import {
+  catalogHref,
   hasActiveFilters,
   type CatalogFilters,
   type EventListResult,
@@ -46,7 +47,16 @@ export function CatalogResults({
         ))}
       </ul>
 
-      <CatalogPagination filters={filters} pageSize={pageSize} total={total} />
+      <Pagination
+        page={filters.page}
+        pageSize={pageSize}
+        total={total}
+        previousHref={catalogHref({
+          ...filters,
+          page: Math.max(0, filters.page - 1),
+        })}
+        nextHref={catalogHref({ ...filters, page: filters.page + 1 })}
+      />
     </>
   );
 }

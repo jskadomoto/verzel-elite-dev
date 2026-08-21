@@ -8,10 +8,10 @@ import {
   catalogHref,
   filtersFrom,
   isInvertedPeriod,
-  lastPageOf,
   type CitiesResult,
   type EventListResult,
 } from "@/lib/events";
+import { lastPageOf } from "@/lib/pagination";
 import { getSession } from "@/lib/session";
 
 export const dynamic = "force-dynamic";

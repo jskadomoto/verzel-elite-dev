@@ -1,17 +1,21 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { lastPageOf, organizerHref } from "@/lib/organizer";
+import { lastPageOf } from "@/lib/pagination";
 
-export function OrganizerPagination({
+export function Pagination({
   page,
   pageSize,
   total,
-}: {
+  previousHref,
+  nextHref,
+}: Readonly<{
   page: number;
   pageSize: number;
   total: number;
-}) {
+  previousHref: string;
+  nextHref: string;
+}>) {
   const router = useRouter();
   const lastPage = lastPageOf(pageSize, total);
 
@@ -22,7 +26,7 @@ export function OrganizerPagination({
       <button
         type="button"
         disabled={page <= 0}
-        onClick={() => router.push(organizerHref(page - 1))}
+        onClick={() => router.push(previousHref)}
         className="btn-quiet"
       >
         Anterior
@@ -35,7 +39,7 @@ export function OrganizerPagination({
       <button
         type="button"
         disabled={page >= lastPage}
-        onClick={() => router.push(organizerHref(page + 1))}
+        onClick={() => router.push(nextHref)}
         className="btn-quiet"
       >
         Próxima

@@ -110,6 +110,3 @@ export function catalogHref(filters: CatalogFilters): string {
   const query = catalogSearchParams(filters).toString();
   return query ? `/?${query}` : "/";
 }
-
-export const lastPageOf = (pageSize: number, total: number) =>
-  Math.max(0, Math.ceil(total / pageSize) - 1);

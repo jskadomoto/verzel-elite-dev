@@ -7,9 +7,6 @@ const MAX_FRAME_SIDE = 480;
 const WORKER_TIMEOUT_MS = 2000;
 const FAILURE_LIMIT = 5;
 
-const buttonClass =
-  "inline-flex min-h-11 items-center justify-center rounded border px-4 text-base";
-
 const DECODER_LOST =
   "A leitura por câmera parou de responder neste aparelho. Use o campo de código abaixo.";
 
@@ -170,25 +167,28 @@ export function GateScanner({
 
   return (
     <section className="flex flex-col gap-3">
-      <div className="overflow-hidden rounded border">
+      <div className="relative overflow-hidden rounded-xl border border-line bg-ink-deep">
         <video
           ref={videoRef}
           playsInline
           muted
-          className={`aspect-square w-full bg-neutral-900 object-cover ${
-            live ? "" : "hidden"
-          }`}
+          className={`aspect-square w-full object-cover ${live ? "" : "hidden"}`}
         />
 
-        {live ? null : (
-          <p className="flex aspect-square w-full items-center justify-center bg-neutral-900 p-4 text-center text-sm text-neutral-400">
+        {live ? (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-6 rounded-lg border-2 border-brand/70"
+          />
+        ) : (
+          <p className="flex aspect-square w-full items-center justify-center p-6 text-center text-sm text-faint">
             A câmera está desligada. A leitura por digitação funciona sem ela.
           </p>
         )}
       </div>
 
       {problem ? (
-        <p role="alert" className="text-sm font-medium">
+        <p role="alert" className="alert">
           {problem}
         </p>
       ) : null}
@@ -197,7 +197,7 @@ export function GateScanner({
         type="button"
         onClick={live ? stop : start}
         disabled={starting}
-        className={`${buttonClass} disabled:opacity-60`}
+        className={live ? "btn-quiet" : "btn-primary"}
       >
         {live ? "Desligar câmera" : starting ? "Abrindo…" : "Ligar câmera"}
       </button>

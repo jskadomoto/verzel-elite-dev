@@ -8,6 +8,7 @@ import {
   MAX_CODE_LENGTH,
   VERDICT,
   type GateEvent,
+  type GateVerdict,
   type ValidationAttempt,
   type ValidationResult,
 } from "@/lib/gate";
@@ -15,11 +16,25 @@ import { GateScanner } from "./gate-scanner";
 
 const COOLDOWN_MS = 3000;
 
-const buttonClass =
-  "inline-flex min-h-11 items-center justify-center rounded border px-4 text-base";
-
-const fieldClass =
-  "min-h-11 rounded border bg-neutral-900 px-3 font-mono text-base text-neutral-50";
+function VerdictMark({
+  verdict,
+  className,
+}: Readonly<{ verdict: GateVerdict; className: string }>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d={VERDICT[verdict].mark} />
+    </svg>
+  );
+}
 
 export function GateConsole({
   events,
@@ -126,9 +141,9 @@ export function GateConsole({
 
   if (!events.length) {
     return (
-      <section className="mt-4 flex flex-col gap-2">
-        <p>Nenhum evento atribuído à sua portaria.</p>
-        <p className="text-sm text-neutral-400">
+      <section className="card mt-5 flex flex-col gap-2">
+        <p className="font-medium">Nenhum evento atribuído à sua portaria.</p>
+        <p className="text-sm text-muted">
           O organizador do evento precisa atribuir esta conta antes da entrada.
         </p>
       </section>
@@ -136,16 +151,16 @@ export function GateConsole({
   }
 
   return (
-    <div className="mt-4 flex flex-col gap-5">
-      <section className="flex flex-col gap-2">
-        <label htmlFor="gate-event" className="text-sm text-neutral-400">
+    <div className="mt-5 flex flex-col gap-4">
+      <section className="card flex flex-col gap-2">
+        <label htmlFor="gate-event" className="label">
           Evento em que você está trabalhando
         </label>
         <select
           id="gate-event"
           value={eventId}
           onChange={(event) => chooseEvent(event.target.value)}
-          className={`${fieldClass} font-sans`}
+          className="field"
         >
           <option value="">Selecione o evento</option>
           {events.map((event) => (
@@ -157,13 +172,13 @@ export function GateConsole({
         </select>
 
         {selected ? (
-          <p className="text-sm text-neutral-400">
+          <p className="text-sm text-muted">
             {selected.venueName}, {selected.city}
           </p>
         ) : null}
 
         {selected && !workable ? (
-          <p role="alert" className="rounded border p-3 text-sm font-medium">
+          <p role="alert" className="alert">
             Este evento está{" "}
             {selected.status === "CANCELLED" ? "cancelado" : "em rascunho"} e não
             recebe leitura. Selecione outro evento.
@@ -175,12 +190,21 @@ export function GateConsole({
         <section
           role="status"
           aria-live="assertive"
-          className={`flex flex-col gap-3 rounded p-4 ${VERDICT[verdict.verdict].panel}`}
+          className={`flex flex-col gap-3 rounded-xl p-4 ${VERDICT[verdict.verdict].panel}`}
         >
-          <p className="text-3xl font-bold">
-            {VERDICT[verdict.verdict].headline}
+          <div className="flex items-center gap-3">
+            <VerdictMark
+              verdict={verdict.verdict}
+              className="size-11 shrink-0"
+            />
+            <p className="text-3xl font-bold tracking-tight">
+              {VERDICT[verdict.verdict].headline}
+            </p>
+          </div>
+
+          <p className="text-base font-medium">
+            {VERDICT[verdict.verdict].detail}
           </p>
-          <p className="text-base">{VERDICT[verdict.verdict].detail}</p>
 
           {verdict.ticket ? (
             <p className="text-lg break-words">
@@ -200,7 +224,7 @@ export function GateConsole({
           <button
             type="button"
             onClick={next}
-            className="inline-flex min-h-11 items-center justify-center rounded border border-current px-4 text-base font-semibold"
+            className="btn min-h-12 border-2 border-current font-semibold"
           >
             Próxima leitura
           </button>
@@ -212,13 +236,13 @@ export function GateConsole({
       ) : null}
 
       <form
-        className="flex flex-col gap-2"
+        className="card flex flex-col gap-2"
         onSubmit={(event) => {
           event.preventDefault();
           validate(typed, "manual");
         }}
       >
-        <label htmlFor="gate-code" className="text-sm text-neutral-400">
+        <label htmlFor="gate-code" className="label">
           Código do ingresso, digitado ou colado
         </label>
         <input
@@ -230,49 +254,53 @@ export function GateConsole({
           spellCheck={false}
           maxLength={MAX_CODE_LENGTH}
           placeholder="v1.…"
-          className={fieldClass}
+          className="field font-mono"
         />
         <button
           type="submit"
           disabled={busy || !workable || !typed.trim()}
-          className={`${buttonClass} disabled:opacity-60`}
+          className="btn-primary"
         >
           {busy ? "Validando…" : "Validar código"}
         </button>
       </form>
 
       {problem ? (
-        <p role="alert" className="text-sm font-medium">
+        <p role="alert" className="alert">
           {problem}
         </p>
       ) : null}
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-sm text-neutral-400">Últimas leituras</h2>
+        <h2 className="label">Últimas leituras</h2>
 
         {log.length ? (
           <ul className="flex flex-col gap-1">
             {log.map((attempt) => (
               <li
                 key={attempt.id}
-                className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded border px-3 py-2 text-sm"
+                className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-md border border-line bg-surface px-3 py-2 text-sm"
               >
-                <span className="font-mono whitespace-nowrap">
+                <span className="font-mono whitespace-nowrap text-muted">
                   {formatClockTime(attempt.at, selected?.timezone ?? "UTC")}
                 </span>
                 <span
-                  className={`rounded px-2 py-0.5 text-xs font-semibold whitespace-nowrap ${VERDICT[attempt.result].badge}`}
+                  className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold whitespace-nowrap ${VERDICT[attempt.result].badge}`}
                 >
+                  <VerdictMark
+                    verdict={attempt.result}
+                    className="size-3.5 shrink-0"
+                  />
                   {VERDICT[attempt.result].headline}
                 </span>
-                <span className="w-full truncate font-mono text-xs text-neutral-400">
+                <span className="w-full truncate font-mono text-xs text-faint">
                   {attempt.codePrefix ?? "leitura ilegível"} · {attempt.by.name}
                 </span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-neutral-400">
+          <p className="text-sm text-faint">
             Nenhuma leitura neste evento ainda.
           </p>
         )}

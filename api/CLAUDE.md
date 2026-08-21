@@ -31,6 +31,14 @@ Três regras que sustentam a separação:
 
 Nenhuma consulta faz join atravessando fronteira de domínio, só carrega o id. É isso que mantém barata a separação futura em serviços.
 
+## Comentários
+
+**Não escreva comentário em código.** Nome de função, de variável e de tipo carregam a intenção. Trecho que só se entende com comentário é trecho para reescrever, não para anotar.
+
+Razão de não haver exceção: comentário não é verificado por nada e fica para trás na primeira mudança, e a partir daí mente. Decisão e justificativa vivem em `../ARQUITETURA.md`, que é onde alguém procura por elas.
+
+Diretiva exigida por ferramenta, como `@ts-expect-error`, não é comentário neste sentido.
+
 ## Invariantes que não se negociam
 
 As garantias centrais vivem no banco, não no código, porque todas são condição de corrida e verificação em aplicação sem lock é teatro.

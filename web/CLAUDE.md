@@ -60,6 +60,14 @@ Dois pontos já mapeados no `globals.css` do scaffold, para resolver quando cheg
 
 **A portaria é escura sempre**, independente da preferência do sistema. Vai ser usada à noite, com o operador olhando a tela de perto, e veredito colorido sobre fundo claro em ambiente escuro é pior de ler.
 
+## Comentários
+
+**Não escreva comentário em código.** Nome de componente, de função e de variável carregam a intenção. Trecho que só se entende com comentário é trecho para reescrever, não para anotar.
+
+Razão de não haver exceção: comentário não é verificado por nada e fica para trás na primeira mudança, e a partir daí mente. Decisão e justificativa vivem no `DECISIONS.md`, que é onde alguém procura por elas.
+
+Diretiva exigida por ferramenta, como `@ts-expect-error`, não é comentário neste sentido.
+
 ## Telas e o que cada uma precisa acertar
 
 **Catálogo público.** Data, local e preço visíveis no card. Busca no servidor, refletida na query string, para que o link seja compartilhável e o botão voltar funcione. Estado vazio que diz o que fazer, nunca lista em branco.

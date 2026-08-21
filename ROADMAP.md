@@ -131,17 +131,16 @@ A topologia também é escolhida aqui de forma a eliminar o problema mais chato 
 
 **O que muda no ritmo desta fase.** Nas anteriores, cada bloco carregava uma decisão que podia estar errada, e a revisão existia para encontrar isso. Aqui não há invariante nova: o sistema já está correto e verificado, e o trabalho é de apresentação, empacotamento e registro.
 
-**Pendências acumuladas nas fases anteriores.** Registro o que foi adiado conscientemente, para que nada disso dependa de memória:
+**Pendências acumuladas nas fases anteriores.** Registro o que foi adiado conscientemente, para que nada disso dependa de memória. O Bloco 4 fechou a lista de empacotamento e a de itens pequenos; o que sobra está abaixo, com o motivo.
 
-- Serviços de api e web no compose, com o Dockerfile da api.
-- Tipos de Node desalinhados entre os dois pacotes.
-- Decisões de implementação ainda não registradas no README: bcrypt em vez de Argon2id, camadas sem inversão explícita de dependência, gerenciador de pacotes único.
-- `web/.env.example` nunca versionado, ignorado pelo gitignore do scaffold.
-- Página do organizador além do fim da lista cai no estado vazio de "você ainda não tem eventos", em vez de redirecionar como o catálogo público faz.
-- Metadados genéricos no detalhe público do evento, deixando o link compartilhado sem prévia útil.
-- `NODE_ENV` no arquivo de ambiente do backend sobrescreve o ambiente do processo, o que já fez uma execução apontada para o banco publicado rodar contra o local.
-- O seed concatena barra ao endereço público sem aparar a que já vier no valor.
-- O seed cria um pedido só, e a tela de pedidos do cliente precisa dos quatro estados para se avaliar. No Bloco 4 ele passa a semear pendente, pago, expirado e cancelado, e a limpar o resíduo de pedidos deixado pelas validações manuais, para que quem clonar veja a mesma tela.
+Resolvido no Bloco 4: compose com os três serviços e Dockerfile dos dois pacotes; tipos de Node alinhados em 22; `web/.env.example` versionado; metadados por evento no detalhe público; `NODE_ENV` fora do arquivo de ambiente do backend; aparo da barra no endereço público do seed; seed com os quatro estados de pedido e comando explícito de limpeza. A página do organizador além do fim já redirecionava para a última página válida: o item estava resolvido no código e a lista é que não tinha sido atualizada.
+
+O que continua aberto:
+
+- Decisões de implementação ainda não registradas no README: bcrypt em vez de Argon2id, e camadas sem inversão explícita de dependência. A escolha de gerenciador de pacotes já está registrada lá.
+- O `DATABASE_URL` publicado precisa conter `sslmode=require`. O TLS deixou de ser ligado pelo `NODE_ENV` e passou a seguir a string de conexão, que é onde a exigência do banco de fato vive. As strings do Neon já vêm com o parâmetro; se a que está no provedor tiver sido colada sem ele, a conexão publicada sai sem TLS e o banco recusa.
+- O README descreve o projeto como estava no início e promete estado "planejado" em quase toda a tabela de requisitos. Reescrita completa é o Bloco 5.
+- O pedido pendente semeado vive dez minutos, como qualquer reserva. Quem rodar o seed e voltar à tela depois disso vê expirado no lugar dele. Rodar o seed de novo recria o pendente.
 
 ---
 

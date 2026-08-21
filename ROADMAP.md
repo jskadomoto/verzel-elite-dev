@@ -4,16 +4,16 @@ Ordem em que vou construir o sistema e o critério que fecha cada fase. A arquit
 
 ## Situação
 
-**Fase atual: 4, compra.**
+**Fase atual: 6, acabamento.**
 
 | Fase                                     | Estado       |
 | ---------------------------------------- | ------------ |
 | 1. Esqueleto publicado                   | concluída    |
 | 2. Schema e sessão                       | concluída    |
 | 3. Catálogo e evento                     | concluída    |
-| 4. Compra                                | em andamento |
-| 5. Ingresso, compartilhamento e portaria | pendente     |
-| 6. Acabamento                            | pendente     |
+| 4. Compra                                | concluída    |
+| 5. Ingresso, compartilhamento e portaria | concluída    |
+| 6. Acabamento                            | em andamento |
 
 Uma fase só passa a concluída quando o critério de conclusão dela é observável no ambiente publicado. O detalhamento do que já existe dentro da fase corrente está no README.
 
@@ -37,9 +37,11 @@ Cada fase abaixo tem objetivo, escopo e critério de conclusão. O critério é 
 
 **Critério de conclusão.** A URL pública do front exibe a resposta da API, obtida através do BFF, com a aplicação rodando nos provedores definitivos.
 
-**Por que primeiro.** Deploy é a parte do trabalho com mais desconhecidos e menos relação com o domínio do problema. Build no ambiente do provedor, variáveis de ambiente, comunicação entre dois serviços em domínios diferentes, contexto seguro e hibernação são indiferentes ao fato de existir ou não regra de negócio, e nenhum deles fica mais fácil de depurar com o sistema montado por cima. Resolvo essa classe inteira de problema quando errar significa apenas repetir um passo.
+**Por que primeiro.** Deploy é a parte do trabalho com mais desconhecidos e menos relação com o domínio do problema. Build no ambiente do provedor, variáveis de ambiente, comunicação entre dois serviços em domínios diferentes, contexto seguro e hibernação são indiferentes ao fato de existir ou não regra de negócio, e nenhum deles fica mais fácil de depurar com o sistema montado por cima.
 
 A topologia também é escolhida aqui de forma a eliminar o problema mais chato dessa fronteira antes que ele apareça: com todas as chamadas passando pelo BFF, cookie entre domínios e CORS não existem no projeto.
+
+**O que eu faria diferente.** Adiei a publicação e trabalhei muitas fases contra ambiente local, o que contradiz o motivo pelo qual esta fase é a primeira. Quando finalmente publiquei, apareceram dois problemas que só existem lá: o instalador do provedor pula dependências de desenvolvimento quando o ambiente é de produção, e o build precisa delas para compilar; e o arquivo de ambiente local tem precedência sobre variáveis do processo, o que fez uma execução apontada para o banco publicado rodar contra o local sem avisar. Os dois teriam aparecido no primeiro dia.
 
 ---
 
@@ -73,6 +75,8 @@ A topologia também é escolhida aqui de forma a eliminar o problema mais chato 
 
 **Por que existem rotas de cidades e categorias.** O filtro compara por igualdade exata, e não por substring, depois que a comparação com curinga se mostrou vulnerável a metacaractere digitado pelo usuário. Com igualdade, digitação livre não encontra nada quando a grafia difere, então o campo precisa ser seleção entre valores que existem no acervo.
 
+**Onde apareceu o primeiro ponto de serialização.** A linha do evento. Todo caminho que escreve nele ou nos seus setores trava essa linha antes de decidir, e isso só ficou evidente depois que uma edição concorrente conseguiu apagar os setores entre a validação e a publicação, produzindo evento publicado sem setor nenhum.
+
 **Depende de.** Fase 2, para papel de organizador e posse do evento.
 
 ---
@@ -87,7 +91,11 @@ A topologia também é escolhida aqui de forma a eliminar o problema mais chato 
 
 **Por que o teste entra aqui.** Ele valida a decisão mais importante do projeto. Um defeito nele descoberto em fase posterior não tem conserto barato, porque muda o modelo de dados. Escrevo junto com a implementação para saber antes.
 
-**Onde a serialização acontece.** Na fase 3 o ponto de serialização foi a linha do evento: todo caminho que escreve nele ou nos seus setores trava essa linha antes de decidir. Aqui o ponto passa a ser a linha do setor, e a proteção não vem de validar antes de escrever, e sim de embutir a condição na própria escrita e decidir pela linha afetada.
+**Onde a serialização acontece.** O ponto passa a ser a linha do setor, e a proteção não vem de validar antes de escrever, e sim de embutir a condição na própria escrita e decidir pela linha afetada.
+
+**O que o teste de concorrência mede de verdade.** O pool limita as transações simultâneas, então trinta requisições concorrentes viram dez transações ativas com as demais enfileiradas no lock da linha do setor. Esse é o mesmo comportamento em produção, e o número não foi inflado para o teste parecer mais duro do que é.
+
+**A regra da chave de idempotência.** Ela discrimina se o desfecho é conhecido, e não o conteúdo do formulário. Enquanto o resultado for desconhecido, falha de rede ou erro do servidor, a mesma chave é mantida; assim que o servidor responde de forma definitiva, inclusive recusando, a chave é descartada e a próxima tentativa é uma cobrança nova de propósito.
 
 **Depende de.** Fase 3, porque não há o que comprar sem evento publicado.
 
@@ -103,6 +111,10 @@ A topologia também é escolhida aqui de forma a eliminar o problema mais chato 
 
 **Por que por último entre as telas funcionais.** A portaria depende de tudo o que vem antes existir de verdade: sem ingresso emitido não há o que validar, e sem atribuição de evento não há como distinguir evento errado.
 
+**O terceiro ponto de serialização.** A linha do evento serializa as operações do organizador, a linha do setor serializa a venda, e a linha do ingresso serializa compartilhamento e validação. É o mesmo padrão nas três, e a razão é sempre a mesma: a decisão vem da escrita condicional, e não de uma leitura que a transação vizinha já pode ter invalidado.
+
+**Onde as bibliotecas entraram, e por quê.** Duas, ambas fazendo uma coisa só. A geração do símbolo, porque implementar codificação e correção de erro à mão falha produzindo um símbolo pior que passa no teste local e quebra em dispositivo real. A decodificação, porque o mesmo vale na leitura, e porque uma biblioteca que possui o laço de captura possui a política de portaria, que é decisão do projeto. Em ambos os casos o desenho e o laço ficaram aqui.
+
 **Depende de.** Fase 4, para existir ingresso.
 
 ---
@@ -111,27 +123,30 @@ A topologia também é escolhida aqui de forma a eliminar o problema mais chato 
 
 **Objetivo.** Transformar o sistema funcional em sistema apresentável.
 
-**Escopo.** Identidade visual definida em bloco. Cancelamento com devolução ao estoque. Testes restantes. Verificação do fluxo completo em produção, em dispositivo móvel. Documentação final.
+**Escopo.** Identidade visual definida em bloco. Cancelamento com devolução ao estoque. Os dois testes restantes. Empacotamento completo em contêiner. Documentação final. Verificação do percurso inteiro em produção, em dispositivo móvel.
 
 **Critério de conclusão.** O percurso inteiro é executável por alguém que nunca viu o sistema, partindo apenas do README e do banco semeado.
 
 **Por que a identidade visual fica para o fim.** Estilizar tela que ainda vai mudar é retrabalho, e decisões visuais tomadas aos poucos não produzem a coerência que um bloco único produz. Defino o conjunto de variáveis de uma vez, depois que as telas estabilizam.
 
+**O que muda no ritmo desta fase.** Nas anteriores, cada bloco carregava uma decisão que podia estar errada, e a revisão existia para encontrar isso. Aqui não há invariante nova: o sistema já está correto e verificado, e o trabalho é de apresentação, empacotamento e registro.
+
 **Pendências acumuladas nas fases anteriores.** Registro o que foi adiado conscientemente, para que nada disso dependa de memória:
 
-- Serviços de api e web no compose, com o Dockerfile da api, hoje ausente porque o provedor constrói o backend nativamente.
-- Alinhar a versão dos tipos de Node entre os dois pacotes.
-- Registrar no README as decisões tomadas durante a implementação: bcrypt em vez de Argon2id, camadas sem inversão explícita de dependência, e gerenciador de pacotes único.
-- Links da aplicação publicada no topo do README, junto do aviso de hibernação.
-- Página do organizador além do fim da lista cai no estado vazio de "você ainda não tem eventos", em vez de redirecionar para a última página válida como o catálogo público faz.
-- Metadados de página no detalhe público do evento, hoje genéricos, o que deixa o link compartilhado sem prévia útil.
-- O `.gitignore` do scaffold do Next ignora todo `.env*`, então `web/.env.example` nunca foi versionado e quem clona não descobre que o front precisa de `API_URL`. O template da api está versionado; o do front precisa de exceção explícita no ignore.
+- Serviços de api e web no compose, com o Dockerfile da api.
+- Tipos de Node desalinhados entre os dois pacotes.
+- Decisões de implementação ainda não registradas no README: bcrypt em vez de Argon2id, camadas sem inversão explícita de dependência, gerenciador de pacotes único.
+- `web/.env.example` nunca versionado, ignorado pelo gitignore do scaffold.
+- Página do organizador além do fim da lista cai no estado vazio de "você ainda não tem eventos", em vez de redirecionar como o catálogo público faz.
+- Metadados genéricos no detalhe público do evento, deixando o link compartilhado sem prévia útil.
+- `NODE_ENV` no arquivo de ambiente do backend sobrescreve o ambiente do processo, o que já fez uma execução apontada para o banco publicado rodar contra o local.
+- O seed concatena barra ao endereço público sem aparar a que já vier no valor.
 
 ---
 
 ## Ordem de prioridade do escopo
 
-Defino isso no início, e não durante a implementação, porque escolha de escopo feita no meio do trabalho tende a proteger o que já foi construído em vez do que importa.
+Defini isso no início, e não durante a implementação, porque escolha de escopo feita no meio do trabalho tende a proteger o que já foi construído em vez do que importa.
 
 **Inalterável.** Vereditos de portaria, caminho de recusa no pagamento, assinatura do código do ingresso, alocação atômica de estoque, seed e documentação. Cada um desses é a demonstração de uma decisão central. Sem eles o sistema continua funcionando e para de dizer qualquer coisa sobre como foi pensado.
 

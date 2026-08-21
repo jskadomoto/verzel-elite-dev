@@ -141,6 +141,7 @@ A topologia também é escolhida aqui de forma a eliminar o problema mais chato 
 - Metadados genéricos no detalhe público do evento, deixando o link compartilhado sem prévia útil.
 - `NODE_ENV` no arquivo de ambiente do backend sobrescreve o ambiente do processo, o que já fez uma execução apontada para o banco publicado rodar contra o local.
 - O seed concatena barra ao endereço público sem aparar a que já vier no valor.
+- O seed cria um pedido só, e a tela de pedidos do cliente precisa dos quatro estados para se avaliar. No Bloco 4 ele passa a semear pendente, pago, expirado e cancelado, e a limpar o resíduo de pedidos deixado pelas validações manuais, para que quem clonar veja a mesma tela.
 
 ---
 

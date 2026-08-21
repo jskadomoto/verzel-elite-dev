@@ -11,3 +11,9 @@ export const AREA_TITLE: Record<Role, string> = {
   CUSTOMER: "Minha conta",
   GATE: "Portaria",
 };
+
+export const AREA_SHORTCUT: Record<Role, string> = {
+  ORGANIZER: "Meus eventos",
+  CUSTOMER: "Minha conta",
+  GATE: "Portaria",
+};

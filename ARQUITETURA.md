@@ -298,6 +298,7 @@ Na criação do evento, o item completo é preservado em `external_snapshot`, os
 | POST   | `/organizer/events/:id/cancel`     | dono        | cancela                                                     |
 | POST   | `/organizer/events/:id/gate-users` | dono        | cria ou atribui portaria                                    |
 | GET    | `/events`                          | público     | lista publicados, com `q`, `category`, `city`, `from`, `to` |
+| GET    | `/events/cities`                   | público     | cidades distintas dos eventos publicados, para o seletor    |
 | GET    | `/events/:id`                      | público     | detalhe com setores e disponibilidade                       |
 | POST   | `/orders`                          | cliente     | reserva estoque                                             |
 | GET    | `/orders/:id`                      | dono        | estado e itens                                              |
@@ -321,7 +322,9 @@ A busca de eventos usa correspondência simples sobre título e nome do local, r
 
 A correspondência é feita com `strpos` sobre os dois textos normalizados por `unaccent` e `lower`, e não com `LIKE`. A diferença não é de desempenho: `LIKE` dá significado a `%` e `_` digitados pelo usuário, e escapá-los não basta, porque `unaccent` roda depois do escape e recria metacaractere a partir de caractere comum, como o `％` de largura inteira, que ela converte em `%`. Sem padrão não existe curinga para escapar nem escape para desfazer, e "contém esta substring" já é a semântica pretendida.
 
-O filtro de cidade é igualdade, não trecho: ele escolhe entre valores que existem no acervo, enquanto a busca por trecho é atribuição do termo livre. A consequência para a interface é que cidade se oferece como seleção, e não como campo de digitação.
+O filtro de cidade é igualdade, não trecho: ele escolhe entre valores que existem no acervo, enquanto a busca por trecho é atribuição do termo livre. A consequência para a interface é que cidade se oferece como seleção, e não como campo de digitação: quem digitasse "sao paulo", "SP" ou "S. Paulo" não encontraria nada, e a lista vazia seria indistinguível de não haver evento. `GET /events/cities` existe para alimentar essa seleção, e devolve apenas cidades de eventos publicados, porque rascunho e cancelado não podem vazar nem a cidade.
+
+A ordenação dessa lista é feita por `unaccent` do valor, e não pela collation do banco. As duas instâncias do projeto discordam: com a collation local, "São Paulo" ordena depois de "Sorocaba", e o Neon pode decidir diferente. Normalizar antes de ordenar torna a ordem a mesma nos dois. O valor devolvido continua sendo o gravado, com acento e caixa originais, porque `unaccent` serve para comparar e ordenar, nunca para exibir.
 
 ## 11. Operação
 

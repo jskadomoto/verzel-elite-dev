@@ -339,6 +339,8 @@ Na criação do evento, o item completo é preservado em `external_snapshot`, os
 | GET    | `/gate/log`                        | portaria    | tentativas recentes                                         |
 | GET    | `/health`                          | público     | estado do serviço                                           |
 
+Toda listagem devolve o mesmo envelope, com `items`, `page`, `pageSize` e `total`, inclusive as que não aceitam parâmetro de página. Catálogo e painel do organizador paginam de verdade; pedidos e ingressos do cliente devolvem sempre a primeira página, porque o volume por cliente não justifica paginar. O envelope permanece igual mesmo assim: contrato divergente entre listagens é o que faz a interface inventar caso especial para cada leitura.
+
 Erros seguem um envelope único, com código estável em maiúsculas que a interface usa para escolher a mensagem, mais uma descrição legível e um objeto de detalhes.
 
 `PAYMENT_DECLINED` responde 402, e não 409 como os demais códigos de negócio, com o motivo da recusa em `details`. Recusa de cartão não é conflito de estado: o pedido continua exatamente como estava, válido e pagável, e a ação correta do cliente é tentar outro cartão, não recarregar para descobrir o que mudou. A interface precisa separar esse caso de `ORDER_NOT_PENDING` e `HOLD_EXPIRED`, que dizem o oposto, que o pedido deixou de aceitar pagamento.

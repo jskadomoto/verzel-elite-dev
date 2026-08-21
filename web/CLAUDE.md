@@ -78,6 +78,8 @@ Diretiva exigida por ferramenta, como `@ts-expect-error`, não é comentário ne
 
 **Meus ingressos.** QR renderizado em SVG a partir do payload assinado que o backend devolve. O backend não manda imagem.
 
+**Meus pedidos.** Fica na mesma tela de Meus ingressos, abaixo dela. Uma linha por pedido, com estado, total e o caminho para pagar quando ainda está pendente. É de onde o cancelamento é alcançado, porque cancelar é por pedido e o ingresso não é a unidade da ação.
+
 **Ingresso.** É o artefato que o cliente guarda e o melhor print para o README. Estado domina o visual: ingresso usado ganha marca e perde saturação.
 
 **Compartilhamento.** Botão de gerar e de revogar, mais a contagem de aberturas. A tela precisa dizer, com todas as letras, que quem tem o link tem o ingresso e que a primeira leitura na portaria vence.

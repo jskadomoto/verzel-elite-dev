@@ -227,6 +227,10 @@ Opera com sinal invertido em relação à reserva, devolvendo ocupação e marca
 
 A linha do pedido é travada antes de qualquer decisão, como no pagamento, e as três escritas seguem na mesma transação: os ingressos válidos viram cancelados, os setores recebem de volta a quantidade dos itens, travados em ordem de id, e o pedido vira cancelado. A precondição do ingresso usado não é uma leitura anterior à escrita: os ingressos são cancelados com a condição `status = 'VALID'` embutida, e só depois se conta quantos ficaram usados. Se houver algum, a transação inteira é desfeita. Uma validação de portaria simultânea ou vence a corrida, e o cancelamento é recusado sem ter mudado nada, ou espera a trava e encontra o ingresso já cancelado, respondendo o veredito de cancelado.
 
+O acesso ao cancelamento vem da listagem de pedidos, não do ingresso. Cancelar é por pedido e um pedido tem vários ingressos, então a unidade da tela precisa ser a unidade da ação, senão o alcance do toque é maior que o assunto da tela. A listagem também é o que dá casa ao pedido pendente e ao expirado, que antes só existiam na URL do checkout. Do ingresso sai apenas um link para o pedido de origem.
+
+A listagem devolve o mesmo envelope das outras, com `items`, `page`, `pageSize` e `total`, ainda que não aceite parâmetro de página: com teto de seis ingressos por pedido, paginar não se paga, e contrato divergente entre listagens é o que faz o front inventar caso especial. O item é a mesma projeção do detalhe, acrescida do evento, e os itens e os ingressos dos pedidos da página vêm em uma consulta cada, filtrando por pedido em qualquer, agrupados em memória. O índice em `(customer_id, created_at desc)` existe desde a migração inicial para esta leitura.
+
 ### Validação
 
 A cadeia de verificação vai do mais barato ao mais caro e interrompe no primeiro erro: formato do payload, assinatura, existência do ingresso, pertencimento ao evento da sessão, reivindicação atômica, e por fim, quando a reivindicação não afeta linha alguma, releitura para distinguir já utilizado de cancelado.
@@ -321,6 +325,7 @@ Na criação do evento, o item completo é preservado em `external_snapshot`, os
 | GET    | `/events/cities`                   | público     | cidades distintas dos eventos publicados, para o seletor    |
 | GET    | `/events/:id`                      | público     | detalhe com setores e disponibilidade                       |
 | POST   | `/orders`                          | cliente     | reserva estoque                                             |
+| GET    | `/orders`                          | cliente     | pedidos do usuário, do mais recente ao mais antigo          |
 | GET    | `/orders/:id`                      | dono        | estado, itens e, quando pago, os ingressos emitidos         |
 | POST   | `/orders/:id/payment`              | dono        | autoriza e emite                                            |
 | POST   | `/orders/:id/cancel`               | dono        | cancela, devolve estoque e invalida os ingressos            |

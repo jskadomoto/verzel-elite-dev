@@ -109,6 +109,29 @@ export async function findByOrder(
   return rows.map(toTicket);
 }
 
+export async function findByOrders(
+  orderIds: string[],
+  db: Executor = pool,
+): Promise<Map<string, TicketRecord[]>> {
+  const byOrder = new Map<string, TicketRecord[]>();
+  if (!orderIds.length) return byOrder;
+
+  const { rows } = await db.query<TicketRow>(
+    `select ${TICKET_COLUMNS} from tickets
+     where order_id = any($1::uuid[])
+     order by order_id, tier_id, seat_label`,
+    [orderIds],
+  );
+
+  for (const row of rows) {
+    const ticket = toTicket(row);
+    const existing = byOrder.get(ticket.orderId);
+    if (existing) existing.push(ticket);
+    else byOrder.set(ticket.orderId, [ticket]);
+  }
+  return byOrder;
+}
+
 export async function findByHolder(
   holderUserId: string,
   db: Executor = pool,

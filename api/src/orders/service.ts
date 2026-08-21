@@ -1,5 +1,10 @@
 import { withTransaction } from "../db/transaction";
 import * as events from "../events/repository";
+import {
+  toPublicEvent,
+  type EventRecord,
+  type PublicEvent,
+} from "../events/types";
 import { badRequest, conflict, notFound } from "../http/errors";
 import * as tickets from "../tickets/repository";
 import * as repository from "./repository";
@@ -9,6 +14,8 @@ import type {
   ExpirySweep,
   OrderDetail,
   OrderItemInput,
+  OrderListResult,
+  OrderRecord,
   OrderStatus,
   PricedItem,
 } from "./types";
@@ -71,6 +78,44 @@ export async function getOwned(
   ]);
 
   return { ...order, items, tickets: issued };
+}
+
+export const FIRST_PAGE = 0;
+
+function eventOf(
+  event: EventRecord | undefined,
+  order: OrderRecord,
+): PublicEvent {
+  if (!event) {
+    throw new Error(
+      `Pedido ${order.id} aponta para evento inexistente: ${order.eventId}`,
+    );
+  }
+  return toPublicEvent(event);
+}
+
+export async function listOwned(customerId: string): Promise<OrderListResult> {
+  const { items, total } = await repository.findByCustomer(customerId);
+
+  const [itemsByOrder, ticketsByOrder, eventsById] = await Promise.all([
+    repository.findItemsOf(items.map(({ id }) => id)),
+    tickets.findByOrders(
+      items.filter(({ status }) => status === "PAID").map(({ id }) => id),
+    ),
+    events.findByIds([...new Set(items.map(({ eventId }) => eventId))]),
+  ]);
+
+  return {
+    items: items.map((order) => ({
+      ...order,
+      items: itemsByOrder.get(order.id) ?? [],
+      tickets: ticketsByOrder.get(order.id) ?? [],
+      event: eventOf(eventsById.get(order.eventId), order),
+    })),
+    page: FIRST_PAGE,
+    pageSize: repository.CUSTOMER_PAGE_SIZE,
+    total,
+  };
 }
 
 const CANCELLABLE = new Set<OrderStatus>(["PENDING", "PAID"]);

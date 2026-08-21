@@ -107,6 +107,27 @@ export async function findOwnedForUpdate(
   return { order: toOrder(rows[0]), holdExpired: rows[0].hold_expired };
 }
 
+export const CUSTOMER_PAGE_SIZE = 20;
+
+export async function findByCustomer(
+  customerId: string,
+  db: Executor = pool,
+): Promise<{ items: OrderRecord[]; total: number }> {
+  const { rows } = await db.query<OrderRow & { total: string }>(
+    `select ${ORDER_COLUMNS}, count(*) over() as total
+     from orders
+     where customer_id = $1
+     order by created_at desc, id
+     limit $2`,
+    [customerId, CUSTOMER_PAGE_SIZE],
+  );
+
+  return {
+    items: rows.map(toOrder),
+    total: rows[0] ? Number(rows[0].total) : 0,
+  };
+}
+
 export async function findOwned(
   orderId: string,
   customerId: string,
@@ -212,6 +233,29 @@ export async function findItems(
     [orderId],
   );
   return rows.map(toItem);
+}
+
+export async function findItemsOf(
+  orderIds: string[],
+  db: Executor = pool,
+): Promise<Map<string, OrderItem[]>> {
+  const byOrder = new Map<string, OrderItem[]>();
+  if (!orderIds.length) return byOrder;
+
+  const { rows } = await db.query<ItemRow>(
+    `select ${ITEM_COLUMNS} from order_items
+     where order_id = any($1::uuid[])
+     order by order_id, tier_id`,
+    [orderIds],
+  );
+
+  for (const row of rows) {
+    const item = toItem(row);
+    const existing = byOrder.get(item.orderId);
+    if (existing) existing.push(item);
+    else byOrder.set(item.orderId, [item]);
+  }
+  return byOrder;
 }
 
 export async function expireOverdueOrders(

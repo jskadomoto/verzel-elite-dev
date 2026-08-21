@@ -1,3 +1,4 @@
+import type { PublicEvent } from "../events/types";
 import type { TicketRecord } from "../tickets/types";
 
 export type OrderStatus = "PENDING" | "PAID" | "EXPIRED" | "CANCELLED";
@@ -47,6 +48,15 @@ export type OrderRecord = {
 export type OrderWithItems = OrderRecord & { items: OrderItem[] };
 
 export type OrderDetail = OrderWithItems & { tickets: TicketRecord[] };
+
+export type OrderSummary = OrderDetail & { event: PublicEvent };
+
+export type OrderListResult = {
+  items: OrderSummary[];
+  page: number;
+  pageSize: number;
+  total: number;
+};
 
 export type LockedOrder = {
   order: OrderRecord;

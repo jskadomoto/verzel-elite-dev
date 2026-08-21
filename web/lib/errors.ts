@@ -15,6 +15,13 @@ const MESSAGES: Record<string, string> = {
   DUPLICATE_TIER_NAME: "Há dois setores com o mesmo nome.",
   CATALOG_ITEM_NOT_FOUND:
     "Este item saiu do catálogo externo. Busque novamente ou preencha os campos à mão.",
+  SOLD_OUT:
+    "Não há ingressos suficientes neste setor. A disponibilidade abaixo foi atualizada.",
+  EVENT_NOT_PUBLISHED: "Este evento não está mais aberto para compra.",
+  TIER_NOT_IN_EVENT: "Setor inválido para este evento. Recarregue a página.",
+  ORDER_NOT_PENDING: "Este pedido não está mais aguardando pagamento.",
+  HOLD_EXPIRED: "A reserva expirou e os ingressos voltaram para a venda.",
+  PAYMENT_DECLINED: "Pagamento recusado. Tente outro cartão.",
   UPSTREAM_UNAVAILABLE:
     "Serviço indisponível no momento. Tente novamente em instantes.",
   UPSTREAM_INVALID_RESPONSE:
@@ -45,7 +52,28 @@ export function fieldErrorsOf(payload: unknown): Record<string, string[]> {
   return marked;
 }
 
-function detailsOf(payload: unknown): unknown {
+const DECLINE_MESSAGES: Record<string, string> = {
+  INVALID_NUMBER: "Número de cartão inválido. Confira os dígitos.",
+  CARD_DECLINED: "O emissor recusou este cartão. Tente outro.",
+  INSUFFICIENT_FUNDS: "Saldo insuficiente. Tente outro cartão.",
+  EXPIRED_CARD: "Cartão vencido. Tente outro.",
+  LOST_CARD: "Cartão bloqueado por perda ou roubo. Tente outro.",
+};
+
+export function declineMessageFor(payload: unknown): string {
+  const details = detailsOf(payload);
+  if (typeof details !== "object" || details === null) {
+    return messageFor("PAYMENT_DECLINED");
+  }
+
+  const reason = (details as { reason?: unknown }).reason;
+  return (
+    (typeof reason === "string" && DECLINE_MESSAGES[reason]) ||
+    messageFor("PAYMENT_DECLINED")
+  );
+}
+
+export function detailsOf(payload: unknown): unknown {
   if (typeof payload !== "object" || payload === null) return undefined;
   const error = (payload as { error?: unknown }).error;
   if (typeof error !== "object" || error === null) return undefined;

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ReserveForm } from "@/components/reserve-form";
 import { RetryButton } from "@/components/retry-button";
 import { read } from "@/lib/api";
 import { messageFor } from "@/lib/errors";
@@ -9,6 +10,8 @@ import {
   formatBrl,
   formatEventDateTimeLong,
 } from "@/lib/format";
+import type { Role } from "@/lib/roles";
+import { getSession } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -17,9 +20,10 @@ export default async function EventPage({
   params,
 }: Readonly<{ params: Promise<{ id: string }> }>) {
   const { id } = await params;
-  const result = await read<PublicEventDetail>(
-    `/events/${encodeURIComponent(id)}`,
-  );
+  const [result, session] = await Promise.all([
+    read<PublicEventDetail>(`/events/${encodeURIComponent(id)}`),
+    getSession(),
+  ]);
 
   if (!result.ok) {
     if (result.status === 404) notFound();
@@ -61,21 +65,49 @@ export default async function EventPage({
 
         {event.tiers.length === 0 ? (
           <p>Este evento ainda não tem setores à venda.</p>
+        ) : session?.role === "CUSTOMER" ? (
+          <ReserveForm eventId={event.id} tiers={event.tiers} />
         ) : (
-          <ul className="flex flex-col gap-3">
-            {event.tiers.map((tier) => (
-              <li key={tier.id}>
-                <TierRow tier={tier} />
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="flex flex-col gap-3">
+              {event.tiers.map((tier) => (
+                <li key={tier.id}>
+                  <TierRow tier={tier} />
+                </li>
+              ))}
+            </ul>
+            <WhoCanBuy role={session?.role ?? null} />
+          </>
         )}
       </section>
     </main>
   );
 }
 
-function TierRow({ tier }: { tier: Tier }) {
+function WhoCanBuy({ role }: Readonly<{ role: Role | null }>) {
+  if (role) {
+    return (
+      <p className="rounded border p-4 text-sm">
+        A compra é feita com conta de cliente. Você está em uma conta de{" "}
+        {role === "ORGANIZER" ? "organizador" : "portaria"}.
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3 rounded border p-4">
+      <p>Entre com sua conta de cliente para escolher a quantidade e reservar.</p>
+      <Link
+        href="/login"
+        className="inline-flex min-h-11 items-center justify-center rounded border px-4 text-base"
+      >
+        Entrar para comprar
+      </Link>
+    </div>
+  );
+}
+
+function TierRow({ tier }: Readonly<{ tier: Tier }>) {
   const soldOut = tier.available === 0;
 
   return (

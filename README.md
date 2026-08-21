@@ -12,35 +12,52 @@ O Roadmap de implementação está detalhado no arquivo [ROADMAP.md](ROADMAP.md)
 
 ## Como rodar
 
-Node 22 ou superior.
+### Com Docker, um comando
+
+Só precisa de Docker. Não precisa de Node instalado, nem copiar arquivo de ambiente.
 
 ```bash
 git clone <url-do-repositorio>
 cd <pasta>
+docker compose up
 ```
+
+Sobem quatro coisas: PostgreSQL, api, front, e o seed, que roda uma vez depois que a api fica saudável e imprime no log as credenciais, um código de ingresso para colar na portaria e um link de compartilhamento.
+
+- Front em `http://localhost:3000`
+- Api em `http://localhost:8080`, com `curl -s localhost:8080/health`
+
+Todas as variáveis têm valor padrão no `docker-compose.yml`, inclusive os segredos, que são de demonstração e não servem para ambiente publicado. Para trocar qualquer uma, copie `.env.example` para `.env` na raiz e preencha só o que quiser mudar.
+
+**Sem chave do Ticketmaster a aplicação sobe igual**, e a busca de catálogo do organizador cai num conjunto local de dados, marcando a resposta como degradada. A chave é opcional em `TICKETMASTER_API_KEY`.
+
+### Sem Docker, para desenvolver
+
+**O projeto usa yarn.** Os dois pacotes têm `yarn.lock` versionado e nenhum tem `package-lock.json`: manter dois arquivos de trava sincronizados a cada mudança de dependência não ia acontecer, e um `package-lock.json` desatualizado é pior que ausente, porque `npm ci` instala exatamente o que está nele. Quem insistir em npm deve usar `npm install`, que resolve a partir do `package.json`.
+
+Node 22 ou superior, e um PostgreSQL. O do compose serve: `docker compose up db`.
 
 **API**
 
 ```bash
 cd api
-npm ci
+yarn install --frozen-lockfile
 cp .env.example .env
-npm run dev
+yarn dev
 ```
 
-Sobe em `http://localhost:3333`. Confira com `curl -s localhost:3333/health`.
+Preencha `DATABASE_URL`, `SESSION_SECRET` e `TICKET_SECRET` no `.env`. A migração roda no boot do processo, antes de escutar a porta. Depois, `yarn seed` popula o banco e imprime as credenciais.
 
 **Front**
 
 ```bash
 cd web
-npm ci
-npm run dev
+yarn install --frozen-lockfile
+cp .env.example .env
+yarn dev
 ```
 
-Sobe em `http://localhost:3000`.
-
-O Docker Compose com PostgreSQL entra junto com o schema, na próxima etapa. Até lá a API não depende de banco.
+`API_URL` aponta para a api, `http://localhost:8080` por padrão. Ela é privada de propósito: o browser nunca fala com a api direto, sempre pelo BFF do Next.
 
 ---
 

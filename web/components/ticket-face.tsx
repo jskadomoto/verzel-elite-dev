@@ -1,5 +1,6 @@
 import { formatEventDateTime, formatEventDateTimeLong } from "@/lib/format";
 import {
+  STATUS_CHIP,
   STATUS_LABEL,
   type SharedTicket,
   type TicketEvent,
@@ -17,12 +18,14 @@ export function TicketEventHeading({
   event,
 }: Readonly<{ event: TicketEvent }>) {
   return (
-    <header className="flex flex-col gap-1">
-      <h1 className="text-2xl font-semibold break-words">{event.title}</h1>
-      <p className="text-sm">
+    <header className="flex flex-col gap-2">
+      <h1 className="text-2xl font-semibold tracking-tight break-words">
+        {event.title}
+      </h1>
+      <p className="text-sm text-brand">
         {formatEventDateTimeLong(event.startsAt, event.timezone)}
       </p>
-      <p className="text-sm break-words opacity-80">
+      <p className="text-sm break-words text-muted">
         {event.venueName}, {event.city}
       </p>
     </header>
@@ -36,35 +39,67 @@ export function TicketFace({
   const note = NOTE[ticket.status];
 
   return (
-    <section className="flex flex-col items-center gap-3 rounded border p-4">
-      <div className="flex w-full flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <span className="text-lg break-words">
-          {ticket.tier.name}
-          <span className="font-mono"> {ticket.seatLabel}</span>
-        </span>
+    <section className="relative overflow-hidden rounded-xl border border-line bg-surface">
+      <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2 px-4 pt-4 pb-5">
+        <div className="flex min-w-0 flex-col">
+          <span className="text-xs tracking-widest text-faint uppercase">
+            Setor
+          </span>
+          <span className="text-lg font-semibold break-words">
+            {ticket.tier.name}
+          </span>
+          <span className="font-mono text-sm text-muted">
+            lugar {ticket.seatLabel}
+          </span>
+        </div>
+
         <span
-          className={`whitespace-nowrap ${
-            ticket.status === "VALID" ? "opacity-70" : "font-semibold"
-          }`}
+          className={`chip whitespace-nowrap ${STATUS_CHIP[ticket.status]}`}
         >
           {STATUS_LABEL[ticket.status]}
         </span>
       </div>
 
-      <TicketCode code={ticket.code} status={ticket.status} />
+      <div className="relative">
+        <div className="border-t border-dashed border-line-strong" />
+        <span
+          aria-hidden="true"
+          className="absolute top-1/2 -left-3 size-6 -translate-y-1/2 rounded-full bg-ink"
+        />
+        <span
+          aria-hidden="true"
+          className="absolute top-1/2 -right-3 size-6 -translate-y-1/2 rounded-full bg-ink"
+        />
+      </div>
 
-      <code className="w-full text-center text-xs break-all opacity-70">
-        {ticket.code}
-      </code>
+      <div className="flex flex-col items-center gap-3 px-4 pt-5 pb-4">
+        <div className="paper w-full max-w-86">
+          <TicketCode code={ticket.code} status={ticket.status} />
+        </div>
 
-      {note ? <p className="w-full text-sm font-medium">{note}</p> : children}
+        <code className="w-full text-center font-mono text-xs break-all text-faint">
+          {ticket.code}
+        </code>
 
-      {ticket.usedAt ? (
-        <p className="w-full text-sm opacity-80">
-          Entrada registrada em{" "}
-          {formatEventDateTime(ticket.usedAt, ticket.event.timezone)}.
-        </p>
-      ) : null}
+        {note ? (
+          <p
+            className={`w-full text-sm font-medium ${
+              ticket.status === "CANCELLED" ? "text-danger" : "text-attention"
+            }`}
+          >
+            {note}
+          </p>
+        ) : (
+          children
+        )}
+
+        {ticket.usedAt ? (
+          <p className="w-full text-sm text-muted">
+            Entrada registrada em{" "}
+            {formatEventDateTime(ticket.usedAt, ticket.event.timezone)}.
+          </p>
+        ) : null}
+      </div>
     </section>
   );
 }

@@ -5,9 +5,6 @@ import { useState } from "react";
 import { codeOf, messageFor } from "@/lib/errors";
 import { sharePath, type IssuedShareLink, type ShareLink } from "@/lib/tickets";
 
-const buttonClass =
-  "inline-flex min-h-11 items-center justify-center rounded border px-4 text-base";
-
 const openedLabel = (openedCount: number) =>
   openedCount === 1 ? "1 abertura" : `${openedCount} aberturas`;
 
@@ -68,28 +65,32 @@ export function ShareControls({
   const url = token ? `${window.location.origin}${sharePath(token)}` : null;
 
   return (
-    <section className="flex flex-col gap-3 rounded border p-4">
-      <h2 className="text-lg font-semibold">Compartilhar</h2>
+    <section className="card flex flex-col gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <h2 className="text-lg font-semibold">Compartilhar</h2>
+        <span className="chip">
+          {share
+            ? `Link ativo · ${openedLabel(share.openedCount)}`
+            : "Nenhum link ativo"}
+        </span>
+      </div>
 
-      <p className="text-sm">
+      <p className="text-sm text-muted">
         Quem tem o link tem o ingresso: ele abre sem senha e sem conta. Se duas
         pessoas apresentarem o mesmo ingresso, a primeira leitura na portaria
         vence. Revogue o link se ele sair do seu controle.
       </p>
 
       {share ? (
-        <p className="text-sm opacity-80">
-          Link ativo, {openedLabel(share.openedCount)}
-          {lastOpenedLabel ? `, última ${lastOpenedLabel}` : ""}. Expira em{" "}
-          {expiresLabel}.
+        <p className="text-sm text-faint">
+          Expira em {expiresLabel}
+          {lastOpenedLabel ? `, última abertura ${lastOpenedLabel}` : ""}.
         </p>
-      ) : (
-        <p className="text-sm opacity-80">Nenhum link ativo.</p>
-      )}
+      ) : null}
 
       {url ? (
-        <div className="flex flex-col gap-2">
-          <label className="text-sm" htmlFor="share-url">
+        <div className="flex flex-col gap-2 rounded-md border border-brand/40 bg-brand/10 p-3">
+          <label className="label" htmlFor="share-url">
             Link gerado, copie agora: ele não é exibido de novo.
           </label>
           <input
@@ -97,12 +98,12 @@ export function ShareControls({
             readOnly
             value={url}
             onFocus={(event) => event.currentTarget.select()}
-            className="bg-background text-foreground min-h-11 rounded border px-3 text-base"
+            className="field font-mono"
           />
           <button
             type="button"
             onClick={() => copy(url)}
-            className={buttonClass}
+            className="btn-primary"
           >
             {copied ? "Link copiado" : "Copiar link"}
           </button>
@@ -110,7 +111,7 @@ export function ShareControls({
       ) : null}
 
       {problem ? (
-        <p role="alert" className="text-sm font-medium">
+        <p role="alert" className="alert">
           {problem}
         </p>
       ) : null}
@@ -120,7 +121,7 @@ export function ShareControls({
           type="button"
           disabled={working}
           onClick={() => send("POST")}
-          className={`${buttonClass} disabled:opacity-60`}
+          className={share ? "btn-quiet" : "btn-primary"}
         >
           {share ? "Gerar link novo" : "Gerar link"}
         </button>
@@ -130,7 +131,7 @@ export function ShareControls({
             type="button"
             disabled={working}
             onClick={() => send("DELETE")}
-            className={`${buttonClass} disabled:opacity-60`}
+            className="btn-danger"
           >
             Revogar link
           </button>
@@ -138,9 +139,7 @@ export function ShareControls({
       </div>
 
       {share ? (
-        <p className="text-sm opacity-80">
-          Gerar um link novo revoga o anterior.
-        </p>
+        <p className="text-sm text-faint">Gerar um link novo revoga o anterior.</p>
       ) : null}
     </section>
   );

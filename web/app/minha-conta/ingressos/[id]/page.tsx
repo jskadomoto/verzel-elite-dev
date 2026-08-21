@@ -21,9 +21,9 @@ export default async function TicketPage({
     if (result.status === 401) redirect("/login");
 
     return (
-      <main className="flex min-h-full flex-col items-start gap-4 px-4 py-6">
+      <main className="mx-auto flex min-h-full w-full max-w-lg flex-col items-start gap-4 px-4 py-6">
         <h1 className="text-xl font-semibold">Ingresso indisponível</h1>
-        <p>{messageFor(result.code)}</p>
+        <p className="text-muted">{messageFor(result.code)}</p>
         <RetryButton />
       </main>
     );
@@ -32,11 +32,15 @@ export default async function TicketPage({
   const ticket = result.data;
 
   return (
-    <main className="flex min-h-full flex-col gap-4 px-4 py-6">
+    <main className="mx-auto flex min-h-full w-full max-w-lg flex-col gap-5 px-4 py-6">
+      <Link href="/minha-conta" className="back-link">
+        ← Meus ingressos
+      </Link>
+
       <TicketEventHeading event={ticket.event} />
 
       <TicketFace ticket={ticket}>
-        <p className="w-full text-sm opacity-80">
+        <p className="w-full text-sm text-muted">
           Mostre este código na entrada. Se a câmera falhar, o texto acima pode
           ser digitado na portaria.
         </p>
@@ -59,13 +63,6 @@ export default async function TicketPage({
             : null
         }
       />
-
-      <Link
-        href="/minha-conta"
-        className="inline-flex min-h-11 items-center justify-center rounded border px-4 text-base"
-      >
-        Voltar aos meus ingressos
-      </Link>
     </main>
   );
 }

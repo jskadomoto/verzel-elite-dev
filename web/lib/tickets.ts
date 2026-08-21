@@ -58,6 +58,12 @@ export const STATUS_LABEL: Record<TicketStatus, string> = {
   CANCELLED: "Cancelado",
 };
 
+export const STATUS_CHIP: Record<TicketStatus, string> = {
+  VALID: "border-success/40 bg-success/15 text-success",
+  USED: "border-attention/40 bg-attention/15 text-attention",
+  CANCELLED: "border-danger/50 bg-danger/15 text-danger",
+};
+
 export const ticketHref = (ticketId: string) =>
   `/minha-conta/ingressos/${encodeURIComponent(ticketId)}`;
 

@@ -1,9 +1,8 @@
 import { read, readAuthed, type ReadResult } from "./api";
-import type { SharedTicket, TicketDetail, TicketSummary } from "./tickets";
+import type { SharedTicket, TicketDetail, TicketListResult } from "./tickets";
 
-export const loadTickets = (): Promise<
-  ReadResult<{ tickets: TicketSummary[] }>
-> => readAuthed<{ tickets: TicketSummary[] }>("/me/tickets");
+export const loadTickets = (): Promise<ReadResult<TicketListResult>> =>
+  readAuthed<TicketListResult>("/me/tickets");
 
 export const loadTicket = (
   ticketId: string,

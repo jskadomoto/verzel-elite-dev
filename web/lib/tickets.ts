@@ -29,6 +29,13 @@ export type TicketSummary = {
   tier: TicketTier;
 };
 
+export type TicketListResult = {
+  items: TicketSummary[];
+  page: number;
+  pageSize: number;
+  total: number;
+};
+
 export type ShareLink = {
   expiresAt: string;
   openedCount: number;

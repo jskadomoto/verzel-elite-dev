@@ -22,7 +22,7 @@ export async function MyTickets() {
     );
   }
 
-  const groups = groupByEvent(result.data.tickets);
+  const groups = groupByEvent(result.data.items);
 
   if (!groups.length) {
     return (

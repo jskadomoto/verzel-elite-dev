@@ -3,7 +3,6 @@ import { forwardAuthed } from "@/lib/api";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-// Transição é comando, sem corpo: o estado de destino está na rota.
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },

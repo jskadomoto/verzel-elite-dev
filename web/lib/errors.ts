@@ -1,5 +1,3 @@
-// A tela escolhe a mensagem pelo `code`, nunca pelo texto: o texto da API é
-// legível mas não é contrato, e pode mudar sem aviso. O código é estável.
 const MESSAGES: Record<string, string> = {
   INVALID_CREDENTIALS: "E-mail ou senha inválidos.",
   UNAUTHENTICATED: "Sua sessão expirou. Entre novamente.",
@@ -18,8 +16,6 @@ export function messageFor(code: string | undefined | null): string {
   return (code && MESSAGES[code]) || FALLBACK;
 }
 
-// Lê o `code` do envelope sem confiar que a resposta tem o formato esperado:
-// um proxy no meio do caminho pode devolver qualquer coisa.
 export function codeOf(payload: unknown): string | undefined {
   if (typeof payload !== "object" || payload === null) return undefined;
   const error = (payload as { error?: unknown }).error;

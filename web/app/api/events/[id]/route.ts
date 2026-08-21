@@ -1,6 +1,5 @@
 import { forward } from "@/lib/api";
 
-// Sem cache: o detalhe expõe disponibilidade por setor, lida no momento.
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 

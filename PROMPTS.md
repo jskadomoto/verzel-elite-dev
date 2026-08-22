@@ -2,7 +2,9 @@
 
 Registro de como a implementação foi conduzida com assistência de IA: o formato dos prompts, as regras que valeram em todos eles, e os pontos em que a revisão mudou a decisão.
 
-O README diz quais ferramentas foram usadas, em que partes, e o que foi feito sem elas. Este documento mostra o mecanismo, com trechos literais dos prompts que escrevi. Nada aqui é reconstrução: é recorte do que foi enviado.
+O README diz quais ferramentas foram usadas, em que partes, e o que foi feito sem elas. Este documento mostra o mecanismo, com trechos literais dos prompts que escrevi e das revisões que recusaram entregas.
+
+Duas ressalvas, antes de qualquer coisa. **Nenhuma citação é reconstruída**: cada trecho entre aspas é recorte do que foi enviado, e onde cortei o meio de um parágrafo o corte está marcado com `[...]`. E a **compilação foi montada ao final**, sobre o registro da sessão, não escrita ao longo dela — o que está detalhado na última seção.
 
 O registro que conservo começa nos commits da fase 2. A fase 1, o esqueleto publicado e o provisionamento dos três ambientes, está descrita no README, na seção do que foi feito sem assistência.
 
@@ -152,6 +154,99 @@ E, no mesmo prompt, a restrição que governou o documento inteiro: **nada pode 
 
 ---
 
+## O que a revisão pegou
+
+A maior parte destes achados não chegou como mensagem de texto. Chegou como **recusa da própria escrita**: a ferramenta ia gravar o arquivo, eu recusei a gravação e escrevi o motivo no lugar. O código defeituoso nunca tocou o disco, e é isso que a expressão "pegos antes de virarem código" quer dizer. O registro desta sessão tem quase trinta recusas com motivo escrito.
+
+Três dos itens abaixo têm origem diferente do resto, e a diferença está declarada em cada um.
+
+**Fallback do catálogo respondendo como se a fonte real tivesse atendido.** O `catch` do `search` devolvia o conjunto local sem marcar a resposta, então dado de fixture chegava à tela do organizador indistinguível de dado da API.
+
+> fix(catalog): flag fallback responses as degraded
+>
+> Só a linha do degraded no catch de search. Confira se getById tem o mesmo problema e corrija junto se tiver, já que é o mesmo contexto.
+
+Tinha o mesmo problema. Hoje os dois caminhos de degradação marcam `degraded: true`, e a tela avisa o organizador de que os resultados não vieram da fonte real.
+
+**Idempotência da reserva com consulta antes da inserção.** A regra é anterior ao código e está no `api/CLAUDE.md`, na lista de detalhes que já custaram bug:
+
+> Insere primeiro e trata o conflito como leitura; consultar antes de inserir tem exatamente a corrida que a idempotência deveria evitar.
+
+Mesmo com a regra escrita, a primeira entrega quebrava:
+
+> A idempotência quebra sob concorrência real. `insertPending` com `do nothing` bloqueia até a outra transação decidir. Se ela confirmar, o `findByKey` seguinte devolve certo. Mas se ela abortar, por esgotamento ou por qualquer outro motivo, o `findByKey` não encontra nada e o serviço responde ORDER_NOT_FOUND para uma requisição válida, quando o correto seria a segunda tentativa prosseguir e alocar.
+>
+> O código ORDER_NOT_FOUND com semântica de conflito é o sintoma: é um estado que o serviço não sabe explicar.
+
+E, no mesmo bloco, um segundo defeito na ordem das operações:
+
+> Reservar em evento rascunho ou cancelado insere a linha, aborta e desfaz, mas a chave de idempotência fica queimada: nova tentativa com a mesma chave encontra conflito com um pedido que não existe mais. Verifique o evento antes de inserir.
+
+Ficou assim: dentro da transação, leitura pela chave como caminho rápido de repetição já confirmada, verificação do evento e dos setores, inserção com tratamento de conflito, e releitura quando o conflito acontece. O caso que não pode existir — conflito sem pedido correspondente — falha alto, com a chave na mensagem, em vez de virar um 404 que mente sobre a causa.
+
+**Rótulo de lugar derivado do contador de ocupação.** Este não tem entrega minha com o defeito: foi pego na revisão da proposta, antes de existir código, e chegou ao trabalho já como regra escrita no `api/CLAUDE.md`.
+
+> O rótulo do lugar sai de `issued_seq`, que só sobe. Nunca de `allocated`, que desce em cancelamento e faz o rótulo colidir depois.
+
+A emissão usa `issued_seq`, incrementado na linha do setor. O `allocated` continua existindo para a ocupação, que oscila nos dois sentidos.
+
+**Publicação validando precondições fora da transação que executa a mudança.** Entreguei `publish` lendo o evento com `getOwned`, validando setores e data, e só então disparando a transição.
+
+> `publish` valida fora da transação que executa a mudança. Hoje `getOwned` carrega o evento, valida setores e data, e só depois dispara a `transition`. Entre a leitura e a escrita cabe um PATCH concorrente que remove os setores ou joga a data para o passado, e o evento é publicado violando as duas precondições. A cláusula `where` protege a transição de estado, mas não protege essas validações.
+
+Ficou dentro de `withTransaction`, com a leitura travando a linha do evento antes de qualquer precondição ser lida, por uma função de repositório cujo parâmetro de conexão é obrigatório — para não existir caminho que trave linha fora de transação. Um prompt seguinte estendeu o mesmo tratamento a `update` e a `cancel`, e a linha do evento virou o ponto de serialização das operações do organizador.
+
+**Chave de idempotência sem prefixo de cliente.** Aqui devo uma correção de crédito: no registro desta sessão isso não aparece como defeito apontado na revisão, e sim como decisão que apresentei na entrega do Bloco 3 e que você aprovou.
+
+> Aceito as três decisões do Bloco 3: o 402 para PAYMENT_DECLINED, a chave de idempotência com prefixo de cliente e pedido, e a expiração decidida pelo relógio do banco.
+
+O único de banco é sobre `idempotency_key` sozinha, então uma chave adivinhada devolveria o pedido de outra pessoa. O que é gravado passou a ser `cliente:chave`, o que dá a cada cliente um espaço próprio sem migração nova. Se houve achado da revisão que originou isso, ele está fora do que consigo verificar.
+
+**Compartilhamento sem serialização na linha do ingresso.** A revogação do link anterior e a inserção do novo aconteciam sem travar a linha, e duas gerações simultâneas deixavam dois links ativos para o mesmo ingresso.
+
+> Trave a linha do ingresso com `for update` no início do `share()`, antes da revogação, e faça a revogação e a inserção acontecerem na mesma transação, com o mesmo cliente. É o mesmo padrão de `findOwnedForUpdate` em pedidos e de `findOwnedForUpdate` em eventos: a linha do ingresso passa a ser o ponto de serialização das operações de compartilhamento daquele ingresso.
+
+O mesmo prompt mandou avaliar se a revogação isolada precisava do mesmo tratamento, e o experimento das duas gerações simultâneas foi refeito depois da correção.
+
+**Laço de leitura da câmera parando para sempre.** Entreguei o laço reagendado apenas dentro do `onmessage` do worker.
+
+> O laço de leitura depende inteiramente de o worker responder: `schedule` só é chamado dentro do `onmessage`. Se o worker lançar, a cadeia para e a câmera fica ligada sem nunca mais decodificar, sem mensagem nenhuma. Como o `postMessage` transfere o buffer, a falha também consome o quadro.
+>
+> Acrescente `onerror` no worker, reagendando o laço e registrando o problema na tela depois de falhas repetidas, para o operador saber que precisa usar o campo manual em vez de continuar apontando a câmera.
+
+Ficou com `onerror`, com um limite de tempo para a resposta do worker, e com um contador de falhas que avisa na tela depois de repetidas — porque uma portaria com a câmera acesa e nada acontecendo é pior que uma portaria que diz para usar o campo manual.
+
+**TypeScript cru servido como worker no build.** Este também tem origem diferente: não foi apontado numa revisão, foi encontrado por mim, porque o prompt exigia a medição.
+
+> Reporte no fim do bloco o tamanho real que entra no pacote do browser depois do build, e qual dos dois caminhos do worker ficou.
+
+A inspeção do build mostrou `.next/static/media/qr-decoder.worker.<hash>.ts`, com 370 bytes de TypeScript não compilado: o empacotador tratou o arquivo como ativo, não como entrada. Passaria no build e falharia no dispositivo. Ficou como worker em JavaScript servido de `public/`, com o decodificador copiado para `public/vendor` no passo de build e carregado por `importScripts`.
+
+**Chave de idempotência do pagamento descartada a cada tecla digitada.** Entreguei o `change` do formulário zerando a chave da tentativa.
+
+> A chave de idempotência é descartada a cada tecla digitada. O `change` zera `attemptKey.current`, então corrigir um dígito depois de uma tentativa produz chave nova.
+>
+> O caso que isso quebra: falha de rede, o cliente não sabe se a cobrança passou, ajusta o cartão e tenta de novo. Se a primeira tinha aprovado, a segunda é outra cobrança.
+>
+> Aqui a intenção é "pagar este pedido", e ela não muda porque o número do cartão mudou. Isso é diferente do formulário de reserva, onde a chave está atrelada à seleção de quantidades.
+
+O formulário de reserva tinha a versão irmã do mesmo defeito, apontada na entrega anterior: a chave era zerada logo depois de ler a resposta, "antes de servir para alguma coisa".
+
+Ficou assim: a chave vive enquanto o desfecho for desconhecido, e é renovada quando o servidor devolve desfecho conhecido — aprovação ou recusa. O critério veio de um ajuste seu de raciocínio, que não mudou o código:
+
+> o 402 não é definitivo porque encerra a intenção do cliente, e sim porque o desfecho passou a ser conhecido. A próxima tentativa é cobrança nova de propósito, e não repetição da anterior.
+
+### Outros que estão no registro e não estavam na sua lista
+
+- **Ordem das escritas no pagamento.** `insertAttempt` rodava antes de travar e validar o pedido: "Pagar pedido inexistente, de outro cliente, ou com reserva expirada insere a linha de tentativa e só então aborta." A ordem passou a ser travar, validar, autorizar, gravar.
+- **SQL inválido com lista vazia.** `insertMany` em ingressos montava `insert into tickets ... values` sem placeholder nenhum, "o mesmo defeito que `orders/repository.ts` tem em `insertItems`, e que `events/repository.ts` já evita em `insertTiers`". A guarda entrou nos três, no mesmo formato.
+- **Ingresso sumindo em silêncio.** `listOwned` descartava o ingresso com um `continue` quando não encontrava evento ou setor: "Se essa situação for impossível, o código não deveria acomodá-la; se for possível, sumir é a pior resposta."
+- **Mensagem falsa no checkout.** Um estado só misturava reserva expirada com pedido não pendente, e um pedido já pago via "A reserva expirou".
+- **Link revogado permanecendo na tela.** Se a geração do link novo falhasse, a tela continuava exibindo o anterior, já revogado no servidor, e o usuário copiava uma URL morta.
+- **Uma palavra em cirílico.** No aviso de resultado degradado, `не` no lugar de `não` — dois caracteres que se parecem e não são os mesmos.
+
+---
+
 ## Quando eu estava errado
 
 Estes são os casos em que a entrega contestou o prompt com evidência e a decisão mudou. Estão aqui porque um registro de prompts que só mostra instruções obedecidas descreve um monólogo, e não foi isso que aconteceu.
@@ -178,7 +273,7 @@ O que ficou no lugar da cópia foi uma nota de dependência entre decisões, no 
 
 ## Os prompts de correção
 
-A maior parte não é briefing de fase. No registro desta sessão são 70 mensagens minhas: 11 briefings de fase ou bloco, 33 correções e aprovações de tamanho médio, e 26 curtas, do tipo "pode seguir" e "faça os commits". O histórico do repositório é o resultado desse ciclo, e não de entregas grandes aceitas de uma vez.
+A maior parte não é briefing de fase. Os briefings são pouco mais de uma dúzia; todo o resto são correções de meia página, aprovações com ressalva, e mensagens de uma linha do tipo "pode seguir" e "faça os commits". O histórico do repositório é o resultado desse ciclo, e não de entregas grandes aceitas de uma vez.
 
 As correções seguem uma forma só: o que muda, e por quê. Nunca só o quê.
 

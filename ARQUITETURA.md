@@ -375,10 +375,12 @@ O endpoint de saúde expõe o instante de início do processo, o que permite dis
 | `SESSION_SECRET`        | sim         | assinatura do token de sessão                                       |
 | `TICKET_SECRET`         | sim         | assinatura do código do ingresso                                    |
 | `PORT`                  | não         | porta de escuta, com padrão 8080                                    |
-| `NODE_ENV`              | não         | decide o modo TLS da conexão, com padrão de desenvolvimento         |
+| `NODE_ENV`              | não         | aparece no log de boot e no endpoint de saúde                       |
 | `TICKETMASTER_API_KEY`  | não         | catálogo externo; ausente, o provedor local assume                  |
 | `WEB_URL`               | não         | monta o link que o seed imprime, com padrão localhost na porta 3000 |
 | `API_URL`               | sim, no BFF | endereço da API para os route handlers do Next, nunca público       |
+
+O TLS da conexão com o banco é decidido pela própria string: `sslmode=require`, `verify-ca` ou `verify-full` em `DATABASE_URL` liga a conexão cifrada, e a ausência do parâmetro a desliga. Derivar isso do `NODE_ENV` conflaria modo de build com exigência do banco, e foi o que impediu a imagem de produção de conectar no Postgres do compose, que não fala TLS.
 
 `SESSION_SECRET` e `TICKET_SECRET` são distintas de propósito. Vazamento da chave de sessão permitiria forjar sessão, e vazamento da chave de ingresso permitiria forjar código; separá-las mantém cada consequência contida ao seu domínio, e permite trocar uma sem invalidar a outra.
 

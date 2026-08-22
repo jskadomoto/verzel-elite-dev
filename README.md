@@ -262,7 +262,9 @@ Vale citar os defeitos reais que foram pegos antes de virarem código, porque é
 
 ### Artefatos do processo, versionados
 
-[ARQUITETURA.md](ARQUITETURA.md), [ROADMAP.md](ROADMAP.md) e os dois contextos de desenvolvimento, [api/CLAUDE.md](api/CLAUDE.md) e [web/CLAUDE.md](web/CLAUDE.md).
+[ARQUITETURA.md](ARQUITETURA.md), [ROADMAP.md](ROADMAP.md), [PROMPTS.md](PROMPTS.md) e os dois contextos de desenvolvimento, [api/CLAUDE.md](api/CLAUDE.md) e [web/CLAUDE.md](web/CLAUDE.md).
+
+O [PROMPTS.md](PROMPTS.md) registra o mecanismo: o formato dos prompts, as regras que valeram em todos eles, e os pontos em que a entrega contestou o prompt com evidência e a decisão mudou.
 
 ---
 
@@ -306,7 +308,7 @@ Os dois teriam aparecido no primeiro dia se a publicação tivesse acontecido qu
 
 ### As decisões de arquitetura
 
-Os documentos do projeto foram escritos à mão e usados como contexto do trabalho assistido, e não produzidos por ele: `ARQUITETURA.md`, `ROADMAP.md`, os dois `CLAUDE.md` e este README.
+Os documentos do projeto foram escritos à mão e usados como contexto do trabalho assistido, e não produzidos por ele: `ARQUITETURA.md`, `ROADMAP.md`, os dois `CLAUDE.md` e este README. O `PROMPTS.md` é a exceção declarada: os prompts citados nele são meus, mas a compilação foi montada ao final, sobre o registro da sessão.
 
 Junto deles, as decisões de desenho tomadas antes de qualquer implementação:
 
